@@ -1,4 +1,6 @@
 # batch norm paper: https://arxiv.org/abs/1502.03167
+# example: https://github.com/wkentaro/pytorch-fcn/blob/master/torchfcn/models/fcn16s.py
+# block setup borrowed from: https://github.com/eladhoffer/convNet.pytorch/blob/master/models/mnist.py
 
 import torch
 import torch.nn as nn
@@ -13,7 +15,7 @@ class AudioWonderNet(nn.Module):
     def __init__(self):
         super(AudioWonderNet, self).__init__()
         self.block1 = nn.Sequential(
-            nn.Conv1d(1, 16, filter_size), # padding?
+            nn.Conv1d(1, 16, filter_size), # padding/stride?
             nn.BatchNorm1d(16),
             nn.LeakyReLU(),
             nn.MaxPool1d(HOW BIG?)
