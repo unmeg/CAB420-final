@@ -10,6 +10,9 @@ from torch.autograd import Variable
 import numpy as np
 
 filter_size = 3
+learning_rate = 1e-4
+starting_epoch = 0
+num_classes = 5
 
 class AudioWonderNet(nn.Module):
     def __init__(self):
@@ -42,17 +45,45 @@ class AudioWonderNet(nn.Module):
             nn.MaxPool1d(2)
         )
 
-        self.final = nn.Linear(VALS)
+        self.final = nn.Linear(128*3*3, num_classes) #nfi what these vals should be
 
     def forward(self, x):
         x = self.block1(x)
+        print(x.shape)
         x = self.block2(x)
+        print(x.shape)
         x = self.block3(x)
+        print(x.shape)
         x = self.block4(x)
+        print(x.shape)
         x = self.final(x)
+        print(x.shape)
 
         return x
 
 net = AudioWonderNet()
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
+
+test_in = Variable(torch.from_numpy(np.random.randn(1,1,4096)))
+print(test_in)
+outties = net(test_in)
+
+# # training 
+
+# for epoch in range(starting_epoch, num_epochs):
+   
+#     for i, (x, y) in enumerate(train_dataloader):
+
+#         x_var = Variable(x.type(dtype))
+#         y_var = Variable(y.type(dtype))
+
+#         out = net(x_var)
+
+#         optimizer.zero_grad()
+#         loss = loss_function(out, y_var)
+#         loss.backward()
+#         optimizer.step()
+
+#         loss_log.append(loss.item())
+
