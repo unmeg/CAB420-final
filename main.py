@@ -15,31 +15,31 @@ class AudioWonderNet(nn.Module):
     def __init__(self):
         super(AudioWonderNet, self).__init__()
         self.block1 = nn.Sequential(
-            nn.Conv1d(1, 16, filter_size), # padding/stride?
+            nn.Conv1d(1, 16, filter_size, 1, 1), # padding/stride?
             nn.BatchNorm1d(16),
             nn.LeakyReLU(),
-            nn.MaxPool1d(HOW BIG?)
+            nn.MaxPool1d(2)
         )
 
         self.block2 = nn.Sequential(
-            nn.Conv1d(16, 32, filter_size), # padding?
+            nn.Conv1d(16, 32, filter_size, 1, 1), # padding?
             nn.BatchNorm1d(32),
             nn.LeakyReLU(),
-            nn.MaxPool1d(HOW BIG?)
+            nn.MaxPool1d(2)
         )
 
         self.block3 = nn.Sequential(
-            nn.Conv1d(32, 64, filter_size), # padding?
+            nn.Conv1d(32, 64, filter_size, 1, 1), # padding?
             nn.BatchNorm1d(64),
             nn.LeakyReLU(),
-            nn.MaxPool1d(HOW BIG?)
+            nn.MaxPool1d(2)
         )
 
         self.block4 = nn.Sequential(
-            nn.Conv1d(64, 128, filter_size), # padding?
+            nn.Conv1d(64, 128, filter_size, 1, 1), # padding?
             nn.BatchNorm1d(128),
             nn.LeakyReLU(),
-            nn.MaxPool1d(HOW BIG?)
+            nn.MaxPool1d(2)
         )
 
         self.final = nn.Linear(VALS)
