@@ -45,8 +45,8 @@ class AudioWonderNet(nn.Module):
             nn.MaxPool1d(2)
         )
 
-        self.final = nn.Linear(256, 128) #nfi what these vals should be
-
+        self.final = nn.Linear(512, 128) #nfi what these vals should be
+        # answer: first val is input / 16
     def forward(self, x):
         x = self.block1(x)
         print(x.shape)
@@ -65,9 +65,12 @@ net = AudioWonderNet()
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
-test_in = Variable(torch.from_numpy(np.random.randn(1,1,4096))).float()
+# test_in = Variable(torch.from_numpy(np.rdom.randn(1,1,4096))).float()
+test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
+print(test_in.shape)
 print(test_in)
 outties = net(test_in)
+print(outties)
 
 # # training 
 
