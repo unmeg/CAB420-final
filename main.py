@@ -18,7 +18,7 @@ class AudioWonderNet(nn.Module):
     def __init__(self):
         super(AudioWonderNet, self).__init__()
         self.block1 = nn.Sequential(
-            nn.Conv1d(1, 16, filter_size, 1, 1), # padding/stride?
+            nn.Conv1d(1, 16, filter_size, stride=1, padding=1), # padding/stride?
             nn.BatchNorm1d(16),
             nn.LeakyReLU(),
             nn.MaxPool1d(2)
@@ -45,7 +45,7 @@ class AudioWonderNet(nn.Module):
             nn.MaxPool1d(2)
         )
 
-        self.final = nn.Linear(128*3*3, num_classes) #nfi what these vals should be
+        self.final = nn.Linear(256, 128) #nfi what these vals should be
 
     def forward(self, x):
         x = self.block1(x)
@@ -65,7 +65,7 @@ net = AudioWonderNet()
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
-test_in = Variable(torch.from_numpy(np.random.randn(1,1,4096)))
+test_in = Variable(torch.from_numpy(np.random.randn(1,1,4096))).float()
 print(test_in)
 outties = net(test_in)
 
