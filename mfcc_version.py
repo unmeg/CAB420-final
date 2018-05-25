@@ -29,14 +29,36 @@ MELWINDOW = 200
 MELBANK = 80
 
 y, sr = librosa.load('test.wav')
-# melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=2048, hop_length=100, fmax = 8000, n_mels=QUANT)
-melspec = librosa.feature.melspectrogram(y=y, sr=sr)
+melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
+# melspec = librosa.feature.melspectrogram(y=y, sr=sr)
 melspec = melspec[:,:-1]
 librosa.display.specshow(librosa.power_to_db(melspec, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
 plt.colorbar(format='%+2.0f dB')
 plt.title('Mel spectrogram')
 plt.tight_layout()
+plt.show()
 
+plt.figure()
+
+D = np.abs(librosa.stft(y))**2
+S = librosa.feature.melspectrogram(S=D, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
+S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+librosa.display.specshow(librosa.power_to_db(melspec, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
+plt.colorbar(format='%+2.0f dB')
+plt.title('Mel spectrogram2')
+plt.tight_layout()
+plt.show()
+
+plt.figure()
+
+s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
+voice_input_oh = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
+voice_input_oh = librosa.core.amplitude_to_db(S=voice_input_oh, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
+librosa.display.specshow(voice_input_oh, y_axis='log', x_axis='time')
+plt.title('Power spectrogram')
+plt.colorbar(format='%+2.0f dB')
+plt.tight_layout()
+plt.show()
 
 # class AudioMagicNet(nn.Module):
 #     def __init__(self, blocks):
