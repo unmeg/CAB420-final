@@ -12,7 +12,8 @@ import numpy as np
 filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
-num_classes = 5
+num_classes = 10 # gives us a category for every half step?
+training = 0
 
 class AudioWonderNet(nn.Module):
     def __init__(self):
@@ -45,7 +46,9 @@ class AudioWonderNet(nn.Module):
             nn.MaxPool1d(2)
         )
 
-        self.final = nn.Linear(512, 128) #nfi what these vals should be
+        self.final1 = nn.Linear(512, 128) #nfi what these vals should be
+        self.final2 = nn.Linear(128, num_classes)
+        
         # answer: first val is input / 16
     def forward(self, x):
         x = self.block1(x)
@@ -56,8 +59,9 @@ class AudioWonderNet(nn.Module):
         print(x.shape)
         x = self.block4(x)
         print(x.shape)
-        x = self.final(x)
+        x = self.final1(x)
         print(x.shape)
+        x = self.final2(x)
 
         return x
 
@@ -74,19 +78,23 @@ print(outties)
 
 # # training 
 
-# for epoch in range(starting_epoch, num_epochs):
-   
-#     for i, (x, y) in enumerate(train_dataloader):
+if(training):
+    for epoch in range(starting_epoch, num_epochs):
+    
+        for i, (x, y) in enumerate(train_dataloader):
 
-#         x_var = Variable(x.type(dtype))
-#         y_var = Variable(y.type(dtype))
-
-#         out = net(x_var)
-
-#         optimizer.zero_grad()
-#         loss = loss_function(out, y_var)
-#         loss.backward()
-#         optimizer.step()
-
-#         loss_log.append(loss.item())
+            x_var = Variable(x.type(dtype))
+            y_var = Variable(y.type(dtype))
+            
+            # Forward pass
+            out = net(x_var)
+            # Compute loss
+            loss = loss_function(out, y_var)       
+            loss_log.append(loss.item())
+            # Zero gradients before the backward pass
+            optimizer.zero_grad()
+            # Backprop
+            loss.backward()
+            # Update the params
+            optimizer.step()
 
