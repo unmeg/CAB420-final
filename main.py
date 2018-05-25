@@ -29,7 +29,6 @@ class AudioWonderNet(nn.Module):
         for b in range(0,blocks):
             i = b+1
             self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
-            print('in out filt: ', conv_input, output, filter_size)
             self.features.add_module("bn"+str(i),nn.BatchNorm1d(output)),
             self.features.add_module("relu"+str(i),nn.LeakyReLU()),
             self.features.add_module("pool"+str(i),nn.MaxPool1d(2))
