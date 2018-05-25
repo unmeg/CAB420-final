@@ -14,58 +14,44 @@ learning_rate = 1e-4
 starting_epoch = 0
 num_classes = 10 # gives us a category for every half step?
 training = 0
+input_size = 8192
 
 class AudioWonderNet(nn.Module):
-    def __init__(self):
+    def __init__(self, blocks):
         super(AudioWonderNet, self).__init__()
-        self.block1 = nn.Sequential(
-            nn.Conv1d(1, 16, filter_size, stride=1, padding=1), # padding/stride?
-            nn.BatchNorm1d(16),
-            nn.LeakyReLU(),
-            nn.MaxPool1d(2)
-        )
 
-        self.block2 = nn.Sequential(
-            nn.Conv1d(16, 32, filter_size, 1, 1), # padding?
-            nn.BatchNorm1d(32),
-            nn.LeakyReLU(),
-            nn.MaxPool1d(2)
-        )
+        self.features = nn.Sequential()
 
-        self.block3 = nn.Sequential(
-            nn.Conv1d(32, 64, filter_size, 1, 1), # padding?
-            nn.BatchNorm1d(64),
-            nn.LeakyReLU(),
-            nn.MaxPool1d(2)
-        )
+        conv_input = 1
+        output = 16 # get the size
+        fc_in = input_size//output # compute fc size pls
 
-        self.block4 = nn.Sequential(
-            nn.Conv1d(64, 128, filter_size, 1, 1), # padding?
-            nn.BatchNorm1d(128),
-            nn.LeakyReLU(),
-            nn.MaxPool1d(2)
-        )
+        for b in range(0,blocks):
+            i = b+1
+            self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
+            print('in out filt: ', conv_input, output, filter_size)
+            self.features.add_module("bn"+str(i),nn.BatchNorm1d(output)),
+            self.features.add_module("relu"+str(i),nn.LeakyReLU()),
+            self.features.add_module("pool"+str(i),nn.MaxPool1d(2))
+            conv_input = output
+            print()
+            output = conv_input * 2
 
-        self.final1 = nn.Linear(512, 128) #nfi what these vals should be
+        print(self.features)
+
+        self.final1 = nn.Linear(fc_in, conv_input)
         self.final2 = nn.Linear(128, num_classes)
         
-        # answer: first val is input / 16
+        
     def forward(self, x):
-        x = self.block1(x)
-        print(x.shape)
-        x = self.block2(x)
-        print(x.shape)
-        x = self.block3(x)
-        print(x.shape)
-        x = self.block4(x)
-        print(x.shape)
-        x = self.final1(x)
-        print(x.shape)
-        x = self.final2(x)
+        h = self.features(x)
+        h = self.final1(h)
+        print(h.shape)
+        h = self.final2(h)
+        print(h.shape)
+        return h
 
-        return x
-
-net = AudioWonderNet()
+net = AudioWonderNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
