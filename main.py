@@ -4,6 +4,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
@@ -14,7 +15,7 @@ filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
 num_epochs = 50
-num_classes = 50 # gives us a category for every half step?
+num_classes = 50
 training = 0
 input_size = 8192
 
@@ -25,7 +26,7 @@ class AudioWonderNet(nn.Module):
         self.features = nn.Sequential()
 
         conv_input = 1
-        output = 16
+        output = 16 
         fc_in = input_size//output # compute fc size pls
 
         for b in range(0,blocks):
@@ -38,7 +39,6 @@ class AudioWonderNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-
         self.final = nn.Linear(256 * 16 * 16, num_classes) # the output is 65536 in size but rn it is not clear to me why this isn't more like 256*64*32*16 or 256*64 or somethin'
         
         
