@@ -50,7 +50,7 @@ class AudioWonderNet(nn.Module):
         print(h.shape)
         h = self.final2(h)
         print(h.shape)
-        return F.log_softmax(h, dim=1) # dunno which dim tbh, need to test
+        return h # had log_softmax here but apparently it is covered by cross-entropy loss
 
 net = AudioWonderNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
