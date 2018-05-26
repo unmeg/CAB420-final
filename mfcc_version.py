@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 
+from testies import Testies
 
 n_mfcc = 13
 n_mels = 40
@@ -57,7 +58,7 @@ class AudioMagicNet(nn.Module):
 
         conv_input = 1
         output = 16  # get the size
-        fc_in = input_size//output  # compute fc size pls
+        # fc_in = input_size//output  # compute fc size pls
 
         for b in range(0, blocks):
             i = b+1
@@ -89,28 +90,47 @@ print('input shape1', test_input.shape) # 80, 678
 outties = net(test_input)
 print(outties.shape)
 
+dataset = np.array([[1, 2, 3], [1, 2, 3]])  # fake test data
+testies = Testies(net, dataset)
+print(testies)
+testies.train()
 
-# # training 
+# # training
 
-if(training):
-    for epoch in range(starting_epoch, num_epochs):
+# if(training):
+#     dataset = np.linspace(0, 10, 100) # test data
+#     test_percent = 0.3
+
+#     rand_idxs = torch.randperm(len(dataset))
+#     test_size = int(np.floor(len(dataset) * test_percent))
+
+#     test_idxs = rand_idxs[:test_size]
+#     train_idxs = rand_idxs[test_size:]
+
+#     train_dataloader = data.DataLoader(dataset, sampler=data.sampler.SubsetRandomSampler(train_idxs), num_workers=1)
+#     test_dataloader = data.DataLoader(dataset, sampler=data.sampler.SubsetRandomSampler(test_idxs), num_workers=1)
+
+
+#     net.train()
+
+#     for epoch in range(starting_epoch, num_epochs):
     
-        for i, (x, y) in enumerate(train_dataloader):
+#         for i, (x, y) in enumerate(train_dataloader):
 
-            x_var = Variable(x.type(dtype))
-            y_var = Variable(y.type(dtype))
-            
-            # Forward pass
-            out = net(x_var)
-            # Compute loss
-            loss = loss_function(out, y_var)       
-            loss_log.append(loss.item())
-            # Zero gradients before the backward pass
-            optimizer.zero_grad()
-            # Backprop
-            loss.backward()
-            # Update the params
-            optimizer.step()
+#             x_var = Variable(x.type(dtype))
+#             y_var = Variable(y.type(dtype))
+
+#             # Forward pass
+#             out = net(x_var)
+#             # Compute loss
+#             loss = loss_function(out, y_var)
+#             loss_log.append(loss.item())
+#             # Zero gradients before the backward pass
+#             optimizer.zero_grad()
+#             # Backprop
+#             loss.backward()
+#             # Update the params
+#             optimizer.step()
 
 
 
