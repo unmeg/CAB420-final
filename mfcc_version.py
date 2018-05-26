@@ -35,32 +35,10 @@ MELWINDOW = 200
 MELBANK = 80
 
 y, sr = librosa.load('test.wav')
-# melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
-# # melspec = librosa.feature.melspectrogram(y=y, sr=sr)
-# # melspec = melspec[:,:-1]
-# print(melspec.shape)
-# librosa.display.specshow(librosa.power_to_db(melspec, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
-# plt.colorbar(format='%+2.0f dB')
-# plt.title('Mel spectrogram')
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure()
-
-# D = np.abs(librosa.stft(y))**2
-# S = librosa.feature.melspectrogram(S=D, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
-# S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-# librosa.display.specshow(librosa.power_to_db(melspec, ref=1.0), y_axis='mel', fmax=8000, x_axis='time')
-# plt.colorbar(format='%+2.0f dB')
-# plt.title('Mel spectrogram2')
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure()
 
 s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
 test_input = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
-print(test_input.shape)
+print('input shape1', test_input.shape)
 test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
 test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
 # librosa.display.specshow(voice_input_oh, y_axis='log', x_axis='time')
@@ -69,6 +47,7 @@ test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsquee
 # plt.tight_layout()
 # plt.show()
 
+input_size = 678
 
 class AudioMagicNet(nn.Module):
     def __init__(self, blocks):
@@ -89,60 +68,49 @@ class AudioMagicNet(nn.Module):
             conv_input = output
             output = conv_input * 2
 
-    
-        self.final2 = nn.Linear(conv_input, num_classes) # m1: [640 x 42], m2: [512 x 128]
+        print(self.features)
+        self.final = nn.Linear(26880, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
         
         
     def forward(self, x):
         h = self.features(x)
-        h = self.final1(h)
-        print(h.shape)
+        print('h shape: ', h.shape)
         h = h.view(h.size(0), -1)
-        h = self.final2(h)
-        print(h.shape)
+        h = self.final(h)
         return h
 
 net = AudioMagicNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
-print(test_input.shape) # 80, 678
+print('input shape1', test_input.shape) # 80, 678
 outties = net(test_input)
 print(outties.shape)
 
-# class AudioMagicNet(nn.Module):
-#     def __init__(self, blocks):
-#         super(AudioWonderNet, self).__init__()
 
-#         self.features = nn.Sequential()
+# # training 
 
-#         conv_input = 1
-#         output = 16 # get the size
-#         fc_in = input_size//output # compute fc size pls
+if(training):
+    for epoch in range(starting_epoch, num_epochs):
+    
+        for i, (x, y) in enumerate(train_dataloader):
 
-#         for b in range(0,blocks):
-#             i = b+1
-#             self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
-#             self.features.add_module("bn"+str(i),nn.BatchNorm1d(output)),
-#             self.features.add_module("relu"+str(i),nn.LeakyReLU()),
-#             self.features.add_module("pool"+str(i),nn.MaxPool1d(2))
-#             conv_input = output
-#             print()
-#             output = conv_input * 2
+            x_var = Variable(x.type(dtype))
+            y_var = Variable(y.type(dtype))
+            
+            # Forward pass
+            out = net(x_var)
+            # Compute loss
+            loss = loss_function(out, y_var)       
+            loss_log.append(loss.item())
+            # Zero gradients before the backward pass
+            optimizer.zero_grad()
+            # Backprop
+            loss.backward()
+            # Update the params
+            optimizer.step()
 
-#         print(self.features)
 
-#         self.final1 = nn.Linear(fc_in, conv_input)
-#         self.final2 = nn.Linear(128, num_classes)
-        
-        
-#     def forward(self, x):
-#         h = self.features(x)
-#         h = self.final1(h)
-#         print(h.shape)
-#         h = self.final2(h)
-#         print(h.shape)
-#         return h
 
 ###### CODE CEMETARY #######
 
@@ -210,3 +178,26 @@ print(outties.shape)
 
 # plt.plot(voice_input_oh)
 # plt.show()
+
+# melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
+# # melspec = librosa.feature.melspectrogram(y=y, sr=sr)
+# # melspec = melspec[:,:-1]
+# print(melspec.shape)
+# librosa.display.specshow(librosa.power_to_db(melspec, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
+# plt.colorbar(format='%+2.0f dB')
+# plt.title('Mel spectrogram')
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure()
+
+# D = np.abs(librosa.stft(y))**2
+# S = librosa.feature.melspectrogram(S=D, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
+# S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+# librosa.display.specshow(librosa.power_to_db(melspec, ref=1.0), y_axis='mel', fmax=8000, x_axis='time')
+# plt.colorbar(format='%+2.0f dB')
+# plt.title('Mel spectrogram2')
+# plt.tight_layout()
+# plt.show()
+
+# plt.figure()
