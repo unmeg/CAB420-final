@@ -39,7 +39,7 @@ class AudioWonderNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(256 * 16 * 16, num_classes) # the output is 65536 in size but rn it is not clear to me why this isn't more like 256*64*32*16 or 256*64 or somethin'
+        self.final = nn.Linear(128 * 512, num_classes) # after features block we have a tensor of [1, 128, 512]. 
         
         
     def forward(self, x):
