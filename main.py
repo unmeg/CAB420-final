@@ -27,7 +27,7 @@ class AudioWonderNet(nn.Module):
         self.features = nn.Sequential()
 
         conv_input = 1
-        output = 16 
+        output = 16
         fc_in = input_size//output # compute fc size pls
 
         for b in range(0,blocks):
@@ -40,9 +40,9 @@ class AudioWonderNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(128 * 512, num_classes) # after features block we have a tensor of [1, 128, 512]. 
-        
-        
+        self.final = nn.Linear(128 * 512, num_classes) # after features block we have a tensor of [1, 128, 512].
+
+
     def forward(self, x):
         h = self.features(x)
         h = h.view(h.size(0), -1) # reshapes tensor, replacing fc layer - dumdum
@@ -68,7 +68,7 @@ if num_gpus > 1:
     net = nn.DataParallel(net).cuda()
 
 # / GPU STUFF
-    
+
 ## DUMMY DATA
 test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
 print('input shape: ', test_in.shape)
@@ -76,11 +76,16 @@ outties = net(test_in)
 print('output shape: ', outties.shape)
 
 
-# # training 
+# REAL DATA
+train_dataset = HDF5PatchesDataset('train_pesq.hdf5')
+train_dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
+
+
+# # training
 
 if(training):
     for epoch in range(starting_epoch, num_epochs):
-    
+
         for i, (x, y) in enumerate(train_dataloader):
 
             # x_var = Variable(x.type(dtype))
@@ -88,11 +93,11 @@ if(training):
             x_var = x.cuda(non_blocking=True)
             y_var = y.cuda(non_blocking=True)
 
-            
+
             # Forward pass
             out = net(x_var)
             # Compute loss
-            loss = loss_function(out, y_var)       
+            loss = loss_function(out, y_var)
             loss_log.append(loss.item())
             # Zero gradients before the backward pass
             optimizer.zero_grad()
