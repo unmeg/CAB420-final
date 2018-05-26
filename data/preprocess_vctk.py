@@ -29,7 +29,7 @@ def get_wav_files(directory):
 if __name__ == '__main__':
 
     # directories
-    vctk_dir = '/home/ubuntu/VCTK-Corpus/wav48/'
+    vctk_dir = '/home/lindsay/Documents/VCTK testing/'
     train_hdf5_filename = 'train_patches.hdf5'
     val_hdf5_filename = 'val_patches.hdf5'
     hr = 'HR'
@@ -37,8 +37,8 @@ if __name__ == '__main__':
 
     # dataset settings
     single_speaker = False
-    train_val_ratio = 0.90
-    percent_dataset = 0.2
+    train_val_ratio = 0.5
+    percent_dataset = 1
 
     # hr/lr sample rate settings
     vctk_sample_rate = 48000
@@ -109,7 +109,8 @@ if __name__ == '__main__':
             # sf.write(os.path.join(lr_dir, 'lr_' + wav), lr_wav, lr_sample_rate, 'PCM_16')
 
             # generate patches for every wav file
-            max_i = min(len(hr_wav), len(input_wav)) - dimension + 1
+            # max_i = min(len(hr_wav), len(input_wav)) - dimension + 1
+            max_i = len(hr_wav) - dimension + 1
 
             for i in range(0, max_i, stride):
 
@@ -142,16 +143,16 @@ if __name__ == '__main__':
     # val_lr_patches = np.array(val_lr_patches[:num_to_keep], dtype=np.float32)
 
     print('\ntrain HR patches shape:', train_hr_patches.shape)
-    print('train LR patches shape:', train_lr_patches.shape)
+    # print('train LR patches shape:', train_lr_patches.shape)
 
     print('\ntrain HR patches min, max, mean:', np.min(train_hr_patches), np.max(train_hr_patches), np.mean(train_hr_patches))
-    print('train LR patches min, max, mean:', np.min(train_lr_patches), np.max(train_lr_patches), np.mean(train_lr_patches))
+    # print('train LR patches min, max, mean:', np.min(train_lr_patches), np.max(train_lr_patches), np.mean(train_lr_patches))
 
     print('\nval HR patches shape:', val_hr_patches.shape)
-    print('val LR patches shape:', val_lr_patches.shape)
+    # print('val LR patches shape:', val_lr_patches.shape)
 
     print('\nval HR patches min, max, mean:', np.min(val_hr_patches), np.max(val_hr_patches), np.mean(val_hr_patches))
-    print('val LR patches min, max, mean:', np.min(val_lr_patches), np.max(val_lr_patches), np.mean(val_lr_patches))
+    # print('val LR patches min, max, mean:', np.min(val_lr_patches), np.max(val_lr_patches), np.mean(val_lr_patches))
 
     # save patches in hdf5 files
     with h5py.File(train_hdf5_filename, 'w') as f:

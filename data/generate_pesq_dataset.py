@@ -13,6 +13,8 @@ import librosa
 
 
 pesq_sr = 16000
+input_hdf5 = 'train_vctk_patches.hdf5'
+output_hdf5 = 'train_pesq.hdf5'
 
 
 def upsample(x_lr, d, r):
