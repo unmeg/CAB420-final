@@ -4,6 +4,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 
@@ -49,7 +50,7 @@ class AudioWonderNet(nn.Module):
         print(h.shape)
         h = self.final2(h)
         print(h.shape)
-        return h
+        return F.log_softmax(h, dim=1) # dunno which dim tbh, need to test
 
 net = AudioWonderNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
