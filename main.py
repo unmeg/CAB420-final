@@ -12,6 +12,7 @@ import numpy as np
 filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
+num_epochs = 50
 num_classes = 10 # gives us a category for every half step?
 training = 0
 input_size = 8192
