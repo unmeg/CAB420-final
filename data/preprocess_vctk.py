@@ -30,15 +30,15 @@ if __name__ == '__main__':
 
     # directories
     vctk_dir = '/home/lindsay/Documents/VCTK testing/'
-    train_hdf5_filename = 'train_patches.hdf5'
-    val_hdf5_filename = 'val_patches.hdf5'
+    train_hdf5_filename = 'train_vctk_patches.hdf5'
+    val_hdf5_filename = 'val_vctk_patches.hdf5'
     hr = 'HR'
     lr = 'LR'
 
     # dataset settings
     single_speaker = True
-    train_val_ratio = 0.05
-    percent_dataset = 1
+    train_val_ratio = 0.90
+    percent_dataset = 0.05
 
     # hr/lr sample rate settings
     vctk_sample_rate = 48000

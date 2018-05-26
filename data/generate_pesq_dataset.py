@@ -24,7 +24,12 @@ def encode_score(score):
     z = np.zeros(num_classes)
     if i != 0:
         z[int(i)] = 1
-    return np.expand_dims(z, axis=0)
+    return z # np.expand_dims(z, axis=0)
+
+
+def decode_score(score):
+    i = np.where(score==1)[0]
+    return (i / (num_classes / 5))
 
 
 def upsample(x_lr, d, r):
@@ -69,7 +74,7 @@ patches = []
 
 indexes = list(range(hr_dataset.shape[0]))
 random.shuffle(indexes)
-for hi in indexes[]:
+for hi in indexes:
 
     # grab a hr patch from the hdf5
     x = hr_dataset[hi, 0, :]
@@ -106,7 +111,7 @@ for hi in indexes[]:
 
     scores += these_scores
 
-patches = np.array(patches, dtype=np.float32)
+patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
 scores = np.array(scores, dtype=np.int32)
 
 with h5py.File(output_hdf5, 'w') as f:
