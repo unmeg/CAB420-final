@@ -54,6 +54,7 @@ net = AudioWonderNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
+# GPU STUFF
 dtype = torch.FloatTensor
 num_gpus = torch.cuda.device_count()
 loss_log = []
@@ -65,7 +66,15 @@ if num_gpus > 0:
 
 if num_gpus > 1:
     net = nn.DataParallel(net).cuda()
+
+# / GPU STUFF
     
+## DUMMY DATA
+test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
+print('input shape: ', test_in.shape)
+outties = net(test_in)
+print('output shape: ', outties.shape)
+
 
 # # training 
 

@@ -98,6 +98,14 @@ if num_gpus > 1:
 
 ## / GPU
 
+# dummy data
+
+
+print('input shape1', test_input.shape) # 80, 678
+outties = net(test_input)
+print(outties.shape)
+
+
 # # training 
 
 if(training):
