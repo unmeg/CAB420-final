@@ -16,8 +16,8 @@ import librosa.display
 n_mfcc = 13
 n_mels = 40
 n_fft = 512
-win_length = 400 # 0.025*16000
-hop_length = 160 # 0.010 * 16000
+win_length = 400  # 0.025*16000
+hop_length = 160  # 0.010 * 16000
 window = 'hamming'
 fmin = 20
 fmax = 4000
@@ -25,12 +25,12 @@ filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
 num_epochs = 50
-num_classes = 50 # gives us a category for every half step?
+num_classes = 50  # gives us a category for every half step?
 training = 0
 input_size = 8192
 
 
-## USING LIBROSA
+# USING LIBROSA
 MELWINDOW = 200
 MELBANK = 80
 
@@ -58,11 +58,15 @@ y, sr = librosa.load('test.wav')
 
 # plt.figure()
 
-s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
-test_input = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
+s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW,
+                             window='hann', center=True))  # pre-computed power spec
+test_input = librosa.feature.melspectrogram(
+    S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft=800, hop_length=MELWINDOW)  # passed to melfilters
 print(test_input.shape)
-test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
-test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+test_input = librosa.core.amplitude_to_db(
+    S=test_input, ref=1.0, amin=5e-4, top_db=80.0)  # logamplitude
+test_input = Variable(torch.from_numpy(
+    test_input).float()).unsqueeze(0).unsqueeze(0)
 # librosa.display.specshow(voice_input_oh, y_axis='log', x_axis='time')
 # plt.title('Power spectrogram')
 # plt.colorbar(format='%+2.0f dB')
@@ -77,22 +81,22 @@ class AudioMagicNet(nn.Module):
         self.features = nn.Sequential()
 
         conv_input = 1
-        output = 16 # get the size
-        fc_in = input_size//output # compute fc size pls
+        output = 16  # get the size
+        fc_in = input_size//output  # compute fc size pls
 
-        for b in range(0,blocks):
+        for b in range(0, blocks):
             i = b+1
-            self.features.add_module("conv"+str(i),nn.Conv2d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
-            self.features.add_module("bn"+str(i),nn.BatchNorm2d(output)),
-            self.features.add_module("relu"+str(i),nn.LeakyReLU()),
-            self.features.add_module("pool"+str(i),nn.MaxPool2d(2))
+            self.features.add_module("conv"+str(i), nn.Conv2d(conv_input,
+                                                              output, filter_size, stride=1, padding=1)),  # padding/stride?
+            self.features.add_module("bn"+str(i), nn.BatchNorm2d(output)),
+            self.features.add_module("relu"+str(i), nn.LeakyReLU()),
+            self.features.add_module("pool"+str(i), nn.MaxPool2d(2))
             conv_input = output
             output = conv_input * 2
 
-    
-        self.final2 = nn.Linear(conv_input, num_classes) # m1: [640 x 42], m2: [512 x 128]
-        
-        
+        # m1: [640 x 42], m2: [512 x 128]
+        self.final2 = nn.Linear(conv_input, num_classes)
+
     def forward(self, x):
         h = self.features(x)
         h = self.final1(h)
@@ -102,11 +106,12 @@ class AudioMagicNet(nn.Module):
         print(h.shape)
         return h
 
+
 net = AudioMagicNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
-print(test_input.shape) # 80, 678
+print(test_input.shape)  # 80, 678
 outties = net(test_input)
 print(outties.shape)
 
@@ -134,8 +139,8 @@ print(outties.shape)
 
 #         self.final1 = nn.Linear(fc_in, conv_input)
 #         self.final2 = nn.Linear(128, num_classes)
-        
-        
+
+
 #     def forward(self, x):
 #         h = self.features(x)
 #         h = self.final1(h)
@@ -194,7 +199,7 @@ print(outties.shape)
 # plt.show()
 
 
-#n_fff is window size
+# n_fff is window size
 
 # s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
 # voice_input_oh = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
