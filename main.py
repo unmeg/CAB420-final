@@ -23,7 +23,7 @@ class AudioWonderNet(nn.Module):
         self.features = nn.Sequential()
 
         conv_input = 1
-        output = 16 # get the size
+        output = 16 
         fc_in = input_size//output # compute fc size pls
 
         for b in range(0,blocks):
@@ -39,7 +39,7 @@ class AudioWonderNet(nn.Module):
         print(self.features)
 
         self.final1 = nn.Linear(fc_in, conv_input)
-        self.final2 = nn.Linear(128, num_classes)
+        self.final2 = nn.Linear(conv_input, num_classes)
         
         
     def forward(self, x):
