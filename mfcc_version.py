@@ -83,10 +83,20 @@ net = AudioMagicNet(4)
 optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 loss_function = nn.CrossEntropyLoss()
 
-print('input shape1', test_input.shape) # 80, 678
-outties = net(test_input)
-print(outties.shape)
+## GPU STUFF
+dtype = torch.FloatTensor
+num_gpus = torch.cuda.device_count()
+loss_log = []
 
+# Check how many GPUs, do cuda/DataParallel accordingly
+if num_gpus > 0:
+    dtype = torch.cuda.FloatTensor
+    net.cuda()
+
+if num_gpus > 1:
+    net = nn.DataParallel(net).cuda()
+
+## / GPU
 
 # # training 
 
@@ -94,10 +104,12 @@ if(training):
     for epoch in range(starting_epoch, num_epochs):
     
         for i, (x, y) in enumerate(train_dataloader):
-
-            x_var = Variable(x.type(dtype))
-            y_var = Variable(y.type(dtype))
             
+            # x_var = Variable(x.type(dtype))
+            # y_var = Variable(y.type(dtype))
+            x_var = x.cuda(non_blocking=True)
+            y_var = y.cuda(non_blocking=True)
+           
             # Forward pass
             out = net(x_var)
             # Compute loss
