@@ -36,8 +36,8 @@ if __name__ == '__main__':
     lr = 'LR'
 
     # dataset settings
-    single_speaker = False
-    train_val_ratio = 0.5
+    single_speaker = True
+    train_val_ratio = 0.05
     percent_dataset = 1
 
     # hr/lr sample rate settings
