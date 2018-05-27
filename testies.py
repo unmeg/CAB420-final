@@ -50,8 +50,8 @@ class Testies(object):
         n_fft = 512,
         hop_length = 160, # 0.010 x 16000
         window = 'hann',
-        fmin = 20,
-        fmax = 4000,
+        fmin = 125,
+        fmax = 7600,
         optimizer=None,
         loss_function=None
     ):
@@ -65,7 +65,7 @@ class Testies(object):
         self.num_epochs = num_epochs
         self.test_threshold = test_threshold
 
-        self.batch_size = 128
+        self.batch_size = 1
         self.generate_dataloaders()
 
         self.optimizer = optimizer or optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
@@ -168,9 +168,9 @@ class Testies(object):
         for i, (x, y) in enumerate(self.train_dl):
 
             if self.mfcc:
-                s = np.abs(librosa.core.stft(y=x.numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
+                s = np.abs(librosa.core.stft(y=x.detach().numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
                 test_input = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
-                test_input = librosa.core.amplitude_to_db(S=test_input, amin=5e-4)
+                test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)
                 x = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
 
             if self.num_gpus > 0:

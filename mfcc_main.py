@@ -31,37 +31,35 @@ training = 1
 
 input_size = 678
 
-class AudioWonderNet(nn.Module):
+class AudioMagicNet(nn.Module):
     def __init__(self, blocks):
-        super(AudioWonderNet, self).__init__()
+        super(AudioMagicNet, self).__init__()
 
         self.features = nn.Sequential()
 
         conv_input = 1
-        output = 16
+        output = 16 # get the size
         fc_in = input_size//output # compute fc size pls
 
         for b in range(0,blocks):
             i = b+1
-            self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
-            self.features.add_module("bn"+str(i),nn.BatchNorm1d(output)),
+            self.features.add_module("conv"+str(i),nn.Conv2d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
+            self.features.add_module("bn"+str(i),nn.BatchNorm2d(output)),
             self.features.add_module("relu"+str(i),nn.LeakyReLU()),
-            self.features.add_module("pool"+str(i),nn.MaxPool1d(2))
+            self.features.add_module("pool"+str(i),nn.MaxPool2d(2))
             conv_input = output
             output = conv_input * 2
 
         print(self.features)
         self.final = nn.Linear(17280, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
 
-
     def forward(self, x):
         h = self.features(x)
-        h = h.view(h.size(0), -1) # reshapes tensor, replacing fc layer - dumdum
-        print('yo h:', h.shape)
+        h = h.view(h.size(0), -1)
         h = self.final(h)
         return h
 
-net = AudioWonderNet(4)
+net = AudioMagicNet(4)
 
 dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
 
