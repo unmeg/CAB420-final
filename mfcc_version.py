@@ -1,12 +1,16 @@
-
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
 from torch.autograd import Variable
-from python_speech_features import mfcc
-from python_speech_features import delta
-from python_speech_features import logfbank
+from tensorboardX import SummaryWriter
+
+import os
+import time
+import datetime
+
+import numpy as np
+
 import scipy.io.wavfile as wav
 import matplotlib.pyplot as plt
 import librosa
@@ -98,6 +102,16 @@ if num_gpus > 1:
 
 ## / GPU
 
+# CHECK POINT AND PLOT STUFF
+checkpoint_label = 'mfcc'
+checkpoint_epoch = 0
+checkpoint_dir = 'checkpoints/'
+
+tensor_label = 'tb_mfcc_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+tensorboard = True
+plot = 0
+
+
 # dummy data
 
 
@@ -105,6 +119,35 @@ print('input shape1', test_input.shape) # 80, 678
 outties = net(test_input)
 print(outties.shape)
 
+# Try and load the checkpoint
+if not os.path.exists(checkpoint_dir):
+    os.makedirs(checkpoint_dir)
+    print("\nCreated a 'checkpoints' folder to save/load the model")
+
+try:
+    # load the checkpoint
+    filename = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, checkpoint_epoch)
+    checkpoint = torch.load(filename)
+
+    # set the model state
+    net.load_state_dict(checkpoint['state_dict'])
+
+    # set optimizer state
+    optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    starting_epoch = checkpoint['epoch']
+    loss_log = checkpoint['loss_log']
+
+    print("\nLoaded checkpoint: " + filename)
+except FileNotFoundError:
+    print("\nNo checkpoint found, starting training")
+
+
+# TensorboardX init
+if not os.path.exists("logs/"+ tensor_label):
+    os.makedirs("logs/" + tensor_label)
+
+writer = SummaryWriter('./logs/' + tensor_label)
 
 # # training 
 
@@ -130,94 +173,20 @@ if(training):
             # Update the params
             optimizer.step()
 
+            if tensorboard:
+                writer.add_scalar('train/loss', loss.item(), plot)
+                plot += 1
 
-
-###### CODE CEMETARY #######
-
-
-# def wav_to_mfcc(file):
-#     # https://github.com/jameslyons/python_speech_features/blob/master/example.py
-#     # signal, samplerate=16000, winlen=0.025, winstep=0.01, numcep=13, nfilt=26, nfft=512, lowfreq=0, highfreq=None, preemph=0.97, ceplifter=22, appendEnergy=True, winfunc=<function <lambda>>
-#     fs, signal = wav.read(file)
-#     mfcc_feat = mfcc(signal,fs, numcep=80)
-#     #d_mfcc_feat = delta(mfcc_feat, 2) # change
-#     fbank_feat = logfbank(signal,fs, nfilt=80) # change)
-
-#     # return mfcc_feat
-#     return fbank_feat
-
-# thing1 = wav_to_mfcc('test.wav')
-# thing2 = wav_to_mfcc('test-y.wav')
-# plt.plot(thing1)
-# plt.show()
-# print(thing1.shape)
-# print(thing2.shape)
-
-# temp =  thing1[ : , np.newaxis , :] # adds 1 in the middle, not sure why i'd want that tbh
-# temp2=  thing2[ : , np.newaxis , :]
-
-# #print(temp2.shape)
-# input_var = Variable(torch.Tensor(temp))
-# input_var2 = Variable(torch.Tensor(temp2))
-
-# print(input_var.shape)
-# print(input_var2.shape)
-
-# y, sr = librosa.load('test.wav')
-# # melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=2048, hop_length=100, fmax = 8000, n_mels=QUANT)
-# melspec = librosa.feature.melspectrogram(y=y, sr=sr)
-#
-
-# print(melspec)
-
-# print(melspec.shape) #128, 265
-
-# melspec = melspec[:,:-1]
-
-# print(melspec)
-
-# print(melspec.shape)#128, 264
-
-# plt.plot(melspec)
-# plt.show()
-
-
-#n_fff is window size
-
-# s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
-# voice_input_oh = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
-# voice_input_oh = librosa.core.amplitude_to_db(S=voice_input_oh, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
-# librosa.display.specshow(voice_input_oh, y_axis='log', x_axis='time')
-# plt.title('Power spectrogram')
-# plt.colorbar(format='%+2.0f dB')
-# plt.tight_layout()
-
-
-# print(voice_input_oh)
-# print(voice_input_oh.shape) # 80 coefficients, 678 frames
-
-# plt.plot(voice_input_oh)
-# plt.show()
-
-# melspec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
-# # melspec = librosa.feature.melspectrogram(y=y, sr=sr)
-# # melspec = melspec[:,:-1]
-# print(melspec.shape)
-# librosa.display.specshow(librosa.power_to_db(melspec, ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
-# plt.colorbar(format='%+2.0f dB')
-# plt.title('Mel spectrogram')
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure()
-
-# D = np.abs(librosa.stft(y))**2
-# S = librosa.feature.melspectrogram(S=D, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW)
-# S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
-# librosa.display.specshow(librosa.power_to_db(melspec, ref=1.0), y_axis='mel', fmax=8000, x_axis='time')
-# plt.colorbar(format='%+2.0f dB')
-# plt.title('Mel spectrogram2')
-# plt.tight_layout()
-# plt.show()
-
-# plt.figure()
+    # Save checkpoint
+    if (epoch % checkpoint_every_epochs == 0 or epoch == (num_epochs-1)) and (epoch != starting_epoch):
+        save_file = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, epoch)
+        save_state = {
+            'epoch': epoch,
+            'state_dict': net.state_dict(),
+            'optimizer' : optimizer.state_dict(),
+            'best_loss' : scheduler.best,
+            'bad_epoch' : scheduler.num_bad_epochs,
+            'loss_log' : loss_log
+        }
+        torch.save(save_state, save_file)
+        print('\nCheckpoint saved')
