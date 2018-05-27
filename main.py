@@ -79,7 +79,7 @@ checkpoint_epoch = 0
 checkpoint_dir = 'checkpoints/'
 
 tensor_label = 'tb_raw_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-tensorboard = True
+tensorboard = False
 plot = 0
 
 
