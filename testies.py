@@ -65,14 +65,14 @@ class Testies(object):
         self.train_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(train_idxs),
-            batch_size=1,
+            batch_size=512,
             num_workers=0
         )
 
         self.test_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(test_idxs),
-            batch_size=1,
+            batch_size=512,
             num_workers=0
         )
 
@@ -133,18 +133,23 @@ class Testies(object):
         best_accuracy = 0
 
         start_time = time.time()
+        checkpoint_time = start_time
 
         for epoch in range(self.starting_epoch, self.num_epochs):
             try:
                 loss_log = self.train()
                 print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss_log))
                 accuracy = self.test()
-                print('Epoch {}/{} validation accuracy: {}%'.format(epoch, self.num_epochs, accuracy))
+                print('Epoch {}/{} validation accuracy: {}%.'.format(epoch, self.num_epochs, accuracy))
 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
                     best_epoch = epoch
                     torch.save(self.net.state_dict(), 'best_model.pkl')
+
+                time_taken = int(time.time() - checkpoint_time)
+                checkpoint_time = time.time()
+                print('Epoch took {} seconds.'.format(time_taken))
 
             except KeyboardInterrupt: # Allow loop breakage
                 print('\nBest accuracy of {}% at epoch {}\n'.format(best_accuracy, best_epoch))
