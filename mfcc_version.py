@@ -9,6 +9,9 @@ import os
 import time
 import datetime
 
+from torch.utils.data import DataLoader
+from data.dataloader import HDF5PatchesDataset
+
 import numpy as np
 
 import scipy.io.wavfile as wav
@@ -29,7 +32,7 @@ learning_rate = 1e-4
 starting_epoch = 0
 num_epochs = 50
 num_classes = 50 # gives us a category for every half step?
-training = 0
+training = 1
 input_size = 8192
 
 
@@ -110,9 +113,13 @@ plot = 0
 # dummy data
 
 
-print('input shape1', test_input.shape) # 80, 678
-outties = net(test_input)
-print(outties.shape)
+#print('input shape1', test_input.shape) # 80, 678
+#outties = net(test_input)
+#print(outties.shape)
+
+
+train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers = 0, shuffle=True)
 
 # Try and load the checkpoint
 if not os.path.exists(checkpoint_dir):
@@ -156,7 +163,7 @@ if(training):
             x_var = x.cuda(non_blocking=True)
             y_var = y.cuda(non_blocking=True)
            
-            s = np.abs(librosa.core.stft(y=y, n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+            s = np.abs(librosa.core.stft(y=x_var, n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
             test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
             test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
             test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
