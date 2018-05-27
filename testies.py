@@ -65,14 +65,14 @@ class Testies(object):
         self.train_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(train_idxs),
-            batch_size=1,
+            batch_size=512,
             num_workers=0
         )
 
         self.test_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(test_idxs),
-            batch_size=1,
+            batch_size=512,
             num_workers=0
         )
 
@@ -86,8 +86,8 @@ class Testies(object):
                 x_var = x.cuda(non_blocking=True)
                 y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
             else:
-                x_var = Variable(x.type(self.dtype))
-                y_var = Variable(y.type(self.dtype)).type(torch.LongTensor)
+                x_var = Variable(x.type(torch.FloatTensor))
+                y_var = Variable(y.type(torch.LongTensor))
 
             # Forward pass
             out = self.net(x_var)
@@ -103,7 +103,7 @@ class Testies(object):
             self.optimizer.step()
 
             # print(loss.item())
-        return loss_log
+        return loss.item()
 
     def test(self):
         self.net.eval() # eval mode
@@ -112,12 +112,12 @@ class Testies(object):
         total = 0
 
         for x, y in self.test_dl:
-
-
             if self.num_gpus > 0:
-                x_var = Variable(x, volatile=True).cuda(non_blocking=True)
+                x_var = Variable(x).cuda(non_blocking=True)
             else:
-                x_var = Variable(x.type(self.dtype), volatile=True)
+                x_var = Variable(x.type(self.dtype))
+
+            y = y.type(torch.LongTensor)
 
             outputs = self.net(x_var)
             _, predicted = torch.max(outputs.data, 1)
@@ -133,21 +133,26 @@ class Testies(object):
         best_accuracy = 0
 
         start_time = time.time()
+        checkpoint_time = start_time
 
         for epoch in range(self.starting_epoch, self.num_epochs):
             try:
                 loss_log = self.train()
-                print('Epoch {}/{} training loss: {}'.format(epoch, self.num_epochs, loss_log))
+                print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss_log))
                 accuracy = self.test()
-                print('Epoch {}/{} validation accuracy: {}'.format(epoch, self.num_epochs, accuracy))
+                print('Epoch {}/{} validation accuracy: {}%.'.format(epoch, self.num_epochs, accuracy))
 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
                     best_epoch = epoch
                     torch.save(self.net.state_dict(), 'best_model.pkl')
 
+                time_taken = int(time.time() - checkpoint_time)
+                checkpoint_time = time.time()
+                print('Epoch took {} seconds.'.format(time_taken))
+
             except KeyboardInterrupt: # Allow loop breakage
-                print('\nBest accuracy of {} at epoch {}\n'.format(best_accuracy, best_epoch))
+                print('\nBest accuracy of {}% at epoch {}\n'.format(best_accuracy, best_epoch))
                 break
         time_taken = time.time() - start_time
-        print('\nBest accuracy of {} at epoch {}/{} in {} seconds'.format(best_accuracy, best_epoch, self.num_epochs, time_taken))
+        print('\nBest accuracy of {}% at epoch {}/{} in {} seconds'.format(best_accuracy, best_epoch, self.num_epochs, time_taken))
