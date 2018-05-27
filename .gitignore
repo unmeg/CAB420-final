@@ -6,3 +6,6 @@ __pycache__/
 *$py.class
 .vscode/
 ENV/
+
+logs/*
+!logs/.gitkeep
