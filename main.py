@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader
 import numpy as np
 from data.dataloader import HDF5PatchesDataset
 
+from testies import Testies
+
 filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
@@ -81,34 +83,39 @@ if not training:
 
 
 # REAL DATA
-train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=0, shuffle=True)
+dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+# train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=0, shuffle=True)
+
+
+if training:
+    testies = Testies(net, dataset)
+    testies.eval()
 
 
 # training
 
-if(training):
-    for epoch in range(starting_epoch, num_epochs):
+# if(training):
+#     for epoch in range(starting_epoch, num_epochs):
 
-        for i, (x, y) in enumerate(train_dataloader):
+#         for i, (x, y) in enumerate(train_dataloader):
 
-            # x_var = Variable(x.type(dtype))
-            # y_var = Variable(y.type(dtype))
-            x_var = x.cuda(non_blocking=True)
-            y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
+#             # x_var = Variable(x.type(dtype))
+#             # y_var = Variable(y.type(dtype))
+#             x_var = x.cuda(non_blocking=True)
+#             y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
 
-            # Forward pass
-            out = net(x_var)
-            # Compute loss
-            print(y_var.data)
-            loss = loss_function(out, y_var)
-            loss_log.append(loss.item())
-            # Zero gradients before the backward pass
-            optimizer.zero_grad()
-            # Backprop
-            loss.backward()
-            # Update the params
-            optimizer.step()
+#             # Forward pass
+#             out = net(x_var)
+#             # Compute loss
+#             print(y_var.data)
+#             loss = loss_function(out, y_var)
+#             loss_log.append(loss.item())
+#             # Zero gradients before the backward pass
+#             optimizer.zero_grad()
+#             # Backprop
+#             loss.backward()
+#             # Update the params
+#             optimizer.step()
 
-            print(loss.item())
+#             print(loss.item())
