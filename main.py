@@ -54,10 +54,6 @@ class AudioWonderNet(nn.Module):
         h = h.view(h.size(0), -1) # reshapes tensor, replacing fc layer - dumdum
         # print('yo h:', h.shape)
         h = self.final(h)
-
-        self.count += 1
-        print(self.count)
-
         return h
 
 net = AudioWonderNet(4)

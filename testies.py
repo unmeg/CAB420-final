@@ -112,14 +112,12 @@ class Testies(object):
         total = 0
 
         for x, y in self.test_dl:
-
-
             if self.num_gpus > 0:
-                x_var = Variable(x, volatile=True).cuda(non_blocking=True)
+                x_var = Variable(x).cuda(non_blocking=True)
+                y = y.type(torch.cuda.LongTensor)
             else:
-                x_var = Variable(x.type(self.dtype), volatile=True)
-
-            y = y.type(torch.LongTensor)
+                x_var = Variable(x.type(self.dtype))
+                y = y.type(torch.LongTensor)
 
             outputs = self.net(x_var)
             _, predicted = torch.max(outputs.data, 1)
@@ -139,9 +137,9 @@ class Testies(object):
         for epoch in range(self.starting_epoch, self.num_epochs):
             try:
                 loss_log = self.train()
-                print('Epoch {}/{} training loss: {}'.format(epoch, self.num_epochs, loss_log))
+                print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss_log))
                 accuracy = self.test()
-                print('Epoch {}/{} validation accuracy: {}'.format(epoch, self.num_epochs, accuracy))
+                print('Epoch {}/{} validation accuracy: {}%'.format(epoch, self.num_epochs, accuracy))
 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
@@ -149,7 +147,7 @@ class Testies(object):
                     torch.save(self.net.state_dict(), 'best_model.pkl')
 
             except KeyboardInterrupt: # Allow loop breakage
-                print('\nBest accuracy of {} at epoch {}\n'.format(best_accuracy, best_epoch))
+                print('\nBest accuracy of {}% at epoch {}\n'.format(best_accuracy, best_epoch))
                 break
         time_taken = time.time() - start_time
-        print('\nBest accuracy of {} at epoch {}/{} in {} seconds'.format(best_accuracy, best_epoch, self.num_epochs, time_taken))
+        print('\nBest accuracy of {}% at epoch {}/{} in {} seconds'.format(best_accuracy, best_epoch, self.num_epochs, time_taken))
