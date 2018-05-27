@@ -16,6 +16,8 @@ import datetime
 
 from torch.utils.data import DataLoader
 
+from testies import Testies
+
 
 import numpy as np
 from data.dataloader import HDF5PatchesDataset
@@ -62,6 +64,13 @@ class AudioWonderNet(nn.Module):
         return h
 
 net = AudioWonderNet(4)
+
+dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+
+if training:
+    testies = Testies(net, dataset)
+    testies.eval()
+
 # optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
 # loss_function = nn.CrossEntropyLoss()
 
@@ -83,13 +92,13 @@ net = AudioWonderNet(4)
 
 
 # CHECK POINT AND PLOT STUFF
-checkpoint_label = 'raw'
-checkpoint_epoch = 0
-checkpoint_dir = 'checkpoints/'
+# checkpoint_label = 'raw'
+# checkpoint_epoch = 0
+# checkpoint_dir = 'checkpoints/'
 
-tensor_label = 'tb_raw_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-tensorboard = False
-plot = 0
+# tensor_label = 'tb_raw_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+# tensorboard = False
+# plot = 0
 
 
 
@@ -104,84 +113,84 @@ plot = 0
 
 
 # REAL DATA
-train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=0, shuffle=True)
+# train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+# train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=0, shuffle=True)
 
-# Try and load the checkpoint
-if not os.path.exists(checkpoint_dir):
-    os.makedirs(checkpoint_dir)
-    print("\nCreated a 'checkpoints' folder to save/load the model")
+# # Try and load the checkpoint
+# if not os.path.exists(checkpoint_dir):
+#     os.makedirs(checkpoint_dir)
+#     print("\nCreated a 'checkpoints' folder to save/load the model")
 
-try:
-    # load the checkpoint
-    filename = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, checkpoint_epoch)
-    checkpoint = torch.load(filename)
+# try:
+#     # load the checkpoint
+#     filename = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, checkpoint_epoch)
+#     checkpoint = torch.load(filename)
 
-    # set the model state
-    net.load_state_dict(checkpoint['state_dict'])
+#     # set the model state
+#     net.load_state_dict(checkpoint['state_dict'])
 
-    # set optimizer state
-    optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
-    optimizer.load_state_dict(checkpoint['optimizer'])
-    starting_epoch = checkpoint['epoch']
-    loss_log = checkpoint['loss_log']
+#     # set optimizer state
+#     optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
+#     optimizer.load_state_dict(checkpoint['optimizer'])
+#     starting_epoch = checkpoint['epoch']
+#     loss_log = checkpoint['loss_log']
 
-    print("\nLoaded checkpoint: " + filename)
-except FileNotFoundError:
-    print("\nNo checkpoint found, starting training")
+#     print("\nLoaded checkpoint: " + filename)
+# except FileNotFoundError:
+#     print("\nNo checkpoint found, starting training")
 
 
-# TensorboardX init
-if not os.path.exists("logs/"+ tensor_label):
-    os.makedirs("logs/" + tensor_label)
+# # TensorboardX init
+# if not os.path.exists("logs/"+ tensor_label):
+#     os.makedirs("logs/" + tensor_label)
 
-writer = SummaryWriter('./logs/' + tensor_label)
+# writer = SummaryWriter('./logs/' + tensor_label)
 
 # training
 
-if(training):
-    for epoch in range(starting_epoch, num_epochs):
+# if(training):
+#     for epoch in range(starting_epoch, num_epochs):
 
-        for i, (x, y) in enumerate(train_dataloader):
+#         for i, (x, y) in enumerate(train_dataloader):
 
-            # x_var = Variable(x.type(dtype))
-            # y_var = Variable(y.type(dtype))
-            x_var = x.cuda(non_blocking=True)
-            y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
-
-
-            # Forward pass
-            out = net(x_var)
-            # Compute loss
-            print(y_var.data)
-            loss = loss_function(out, y_var)
-            loss_log.append(loss.item())
-            # Zero gradients before the backward pass
-            optimizer.zero_grad()
-            # Backprop
-            loss.backward()
-            # Update the params
-            optimizer.step()
-
-            print(loss.item())
-            if tensorboard:
-                writer.add_scalar('train/loss', loss.item(), plot)
-                plot += 1
-
-    # Save checkpoint
-    if (epoch % checkpoint_every_epochs == 0 or epoch == (num_epochs-1)) and (epoch != starting_epoch):
-        save_file = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, epoch)
-        save_state = {
-            'epoch': epoch,
-            'state_dict': net.state_dict(),
-            'optimizer' : optimizer.state_dict(),
-            'best_loss' : scheduler.best,
-            'bad_epoch' : scheduler.num_bad_epochs,
-            'loss_log' : loss_log
-        }
-        torch.save(save_state, save_file)
-        print('\nCheckpoint saved')
+#             # x_var = Variable(x.type(dtype))
+#             # y_var = Variable(y.type(dtype))
+#             x_var = x.cuda(non_blocking=True)
+#             y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
 
-            
+#             # Forward pass
+#             out = net(x_var)
+#             # Compute loss
+#             print(y_var.data)
+#             loss = loss_function(out, y_var)
+#             loss_log.append(loss.item())
+#             # Zero gradients before the backward pass
+#             optimizer.zero_grad()
+#             # Backprop
+#             loss.backward()
+#             # Update the params
+#             optimizer.step()
+
+#             print(loss.item())
+#             if tensorboard:
+#                 writer.add_scalar('train/loss', loss.item(), plot)
+#                 plot += 1
+
+#     # Save checkpoint
+#     if (epoch % checkpoint_every_epochs == 0 or epoch == (num_epochs-1)) and (epoch != starting_epoch):
+#         save_file = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(checkpoint_dir, checkpoint_label, epoch)
+#         save_state = {
+#             'epoch': epoch,
+#             'state_dict': net.state_dict(),
+#             'optimizer' : optimizer.state_dict(),
+#             'best_loss' : scheduler.best,
+#             'bad_epoch' : scheduler.num_bad_epochs,
+#             'loss_log' : loss_log
+#         }
+#         torch.save(save_state, save_file)
+#         print('\nCheckpoint saved')
+
+
+
 

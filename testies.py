@@ -7,7 +7,9 @@ import torch.utils.data as data
 
 from torch.autograd import Variable
 
-import time
+from tensorboardX import SummaryWriter
+
+import time, os, datetime, glob
 
 class Testies(object):
     """
@@ -15,8 +17,12 @@ class Testies(object):
             net (:class:`torch.nn.Module`) network to use
             dataset (:class: `np.array`)
             test_percent (float)
+            learning_rate (float)
             starting_epoch (int)
             num_epochs (int)
+            checkpoint_every_epochs (int)
+            optimizer
+            loss_function
     """
     def __init__(self,
         net,
@@ -25,6 +31,7 @@ class Testies(object):
         learning_rate=1e-4,
         starting_epoch=0,
         num_epochs=50,
+        checkpoint_every_epochs=10,
         optimizer=None,
         loss_function=None
     ):
@@ -53,6 +60,16 @@ class Testies(object):
         if self.num_gpus > 1:
             self.net = nn.DataParallel(self.net).cuda()
 
+        self.tensorboard = False
+        self.plot = 0
+        self.init_writer()
+
+        self.checkpoint_every_epochs = checkpoint_every_epochs
+        self.loss_log = []
+        self.checkpoint_dir = 'checkpoints/'
+        self.checkpoint_label = 'raw'
+        self.load_checkpoint()
+
 
     def generate_dataloaders(self):
 
@@ -76,10 +93,47 @@ class Testies(object):
             num_workers=0
         )
 
+    def load_checkpoint(self):
+        # Try and load the checkpoint
+        if not os.path.exists(self.checkpoint_dir):
+            os.makedirs(self.checkpoint_dir)
+            print("\nCreated a 'checkpoints' folder to save/load the model")
+
+        # Find the highest epoch number in the checkpoint_dir (or 0)
+        checkpoint_epoch = max([int(x.split('_')[-1].split('.')[0]) for x in glob.glob(self.checkpoint_dir + '*')] + [0])
+
+        try:
+            # load the checkpoint
+            filename = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(self.checkpoint_dir, self.checkpoint_label, checkpoint_epoch)
+            checkpoint = torch.load(filename)
+
+            # set the model state
+            self.net.load_state_dict(checkpoint['state_dict'])
+
+            # set optimizer state
+            self.optimizer = optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            self.starting_epoch = checkpoint['epoch']
+            self.loss_log = checkpoint['loss_log']
+
+            print("\nLoaded checkpoint: " + filename)
+        except FileNotFoundError:
+            print("\nNo checkpoint found, starting training")
+
+
+    def init_writer(self):
+        # TensorboardX init
+        tensor_label = 'tb_raw_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        if not os.path.exists("logs/"+ tensor_label):
+            os.makedirs("logs/" + tensor_label)
+
+        self.writer = SummaryWriter('./logs/' + tensor_label)
+
+
     def train(self):
         # turn on training mode
         self.net.train()
-        loss_log = []
 
         for i, (x, y) in enumerate(self.train_dl):
             if self.num_gpus > 0:
@@ -94,13 +148,17 @@ class Testies(object):
             # Compute loss
             # print(y_var.data)
             loss = self.loss_function(out, y_var)
-            loss_log.append(loss.item())
+            self.loss_log.append(loss.item())
             # Zero gradients before the backward pass
             self.optimizer.zero_grad()
             # Backprop
             loss.backward()
             # Update the params
             self.optimizer.step()
+
+            if self.tensorboard:
+                self.writer.add_scalar('train/loss', loss.item(), self.plot)
+                self.plot += 1
 
             # print(loss.item())
         return loss.item()
@@ -131,28 +189,45 @@ class Testies(object):
     def eval(self):
         best_epoch = 0
         best_accuracy = 0
+        best_loss = 0
 
         start_time = time.time()
-        checkpoint_time = start_time
 
         for epoch in range(self.starting_epoch, self.num_epochs):
             try:
-                loss_log = self.train()
-                print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss_log))
+                loss = self.train()
+                print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss))
                 accuracy = self.test()
                 print('Epoch {}/{} validation accuracy: {}%.'.format(epoch, self.num_epochs, accuracy))
+
+                if loss > best_loss:
+                    loss = best_loss
 
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
                     best_epoch = epoch
                     torch.save(self.net.state_dict(), 'best_model.pkl')
 
-                time_taken = int(time.time() - checkpoint_time)
-                checkpoint_time = time.time()
-                print('Epoch took {} seconds.'.format(time_taken))
+                # time_taken = int(time.time() - checkpoint_time)
+                # checkpoint_time = time.time()
+                # print('Epoch took {} seconds.'.format(time_taken))
+
+                if (epoch % self.checkpoint_every_epochs == 0 or epoch == (self.num_epochs-1)) and (epoch != self.starting_epoch):
+                    save_file = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(self.checkpoint_dir, self.checkpoint_label, epoch)
+                    save_state = {
+                        'epoch': epoch,
+                        'state_dict': self.net.state_dict(),
+                        'optimizer' : self.optimizer.state_dict(),
+                        'best_loss' : best_loss,
+                        # 'bad_epoch' : scheduler.num_bad_epochs,
+                        'loss_log' : self.loss_log
+                    }
+                    torch.save(save_state, save_file)
+                    print('\nCheckpoint saved')
 
             except KeyboardInterrupt: # Allow loop breakage
                 print('\nBest accuracy of {}% at epoch {}\n'.format(best_accuracy, best_epoch))
                 break
+
         time_taken = time.time() - start_time
         print('\nBest accuracy of {}% at epoch {}/{} in {} seconds'.format(best_accuracy, best_epoch, self.num_epochs, time_taken))
