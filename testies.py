@@ -114,10 +114,10 @@ class Testies(object):
         for x, y in self.test_dl:
             if self.num_gpus > 0:
                 x_var = Variable(x).cuda(non_blocking=True)
-                y = y.type(torch.cuda.LongTensor)
             else:
                 x_var = Variable(x.type(self.dtype))
-                y = y.type(torch.LongTensor)
+
+            y = y.type(torch.LongTensor)
 
             outputs = self.net(x_var)
             _, predicted = torch.max(outputs.data, 1)
