@@ -9,6 +9,8 @@ from torch.autograd import Variable
 
 from tensorboardX import SummaryWriter
 
+import librosa
+
 import time, os, datetime, glob
 
 class Testies(object):
@@ -22,6 +24,14 @@ class Testies(object):
             num_epochs (int)
             checkpoint_every_epochs (int)
             test_threshold (float)
+            checkpoint_label (string)
+            mfcc (bool),
+            n_mels (int)
+            n_fft (int)
+            hop_length (int)
+            window (string)
+            fmin (int)
+            fmax (int)
             optimizer
             loss_function
     """
@@ -34,6 +44,14 @@ class Testies(object):
         num_epochs=50,
         checkpoint_every_epochs=5,
         test_threshold=0.5,
+        checkpoint_label='raw',
+        mfcc=False,
+        n_mels = 80,
+        n_fft = 512,
+        hop_length = 160, # 0.010 x 16000
+        window = 'hann',
+        fmin = 20,
+        fmax = 4000,
         optimizer=None,
         loss_function=None
     ):
@@ -64,15 +82,23 @@ class Testies(object):
         if self.num_gpus > 1:
             self.net = nn.DataParallel(self.net).cuda()
 
-        self.tensorboard = False
-        self.plot = 0
-        self.init_writer()
+        self.mfcc = mfcc
+        self.n_mels = n_mels
+        self.n_fft = n_fft
+        self.hop_length = hop_length
+        self.window = window
+        self.fmin = fmin
+        self.fmax = fmax
 
         self.checkpoint_every_epochs = checkpoint_every_epochs
         self.loss_log = []
         self.checkpoint_dir = 'checkpoints/'
-        self.checkpoint_label = 'raw'
+        self.checkpoint_label = checkpoint_label
         self.load_checkpoint()
+
+        self.tensorboard = False
+        self.plot = 0
+        self.init_writer()
 
 
     def generate_dataloaders(self):
@@ -127,7 +153,7 @@ class Testies(object):
 
     def init_writer(self):
         # TensorboardX init
-        tensor_label = 'tb_raw_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        tensor_label = 'tb_{}_{}'.format(self.checkpoint_label, datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
 
         if not os.path.exists("logs/"+ tensor_label):
             os.makedirs("logs/" + tensor_label)
@@ -140,6 +166,13 @@ class Testies(object):
         self.net.train()
 
         for i, (x, y) in enumerate(self.train_dl):
+
+            if self.mfcc:
+                s = np.abs(librosa.core.stft(y=x.numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
+                test_input = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
+                test_input = librosa.core.amplitude_to_db(S=test_input, amin=5e-4)
+                x = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
                 y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
