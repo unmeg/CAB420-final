@@ -9,3 +9,4 @@ ENV/
 
 logs/*
 !logs/.gitkeep
+*.pkl
