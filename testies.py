@@ -44,6 +44,7 @@ class Testies(object):
         self.starting_epoch = starting_epoch
         self.num_epochs = num_epochs
 
+        self.batch_size = 128
         self.generate_dataloaders()
 
         self.optimizer = optimizer or optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
@@ -82,14 +83,14 @@ class Testies(object):
         self.train_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(train_idxs),
-            batch_size=512,
+            batch_size=self.batch_size,
             num_workers=0
         )
 
         self.test_dl = data.DataLoader(
             self.dataset,
             sampler=data.sampler.SubsetRandomSampler(test_idxs),
-            batch_size=512,
+            batch_size=self.batch_size,
             num_workers=0
         )
 
