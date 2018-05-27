@@ -103,7 +103,7 @@ class Testies(object):
             self.optimizer.step()
 
             # print(loss.item())
-        return loss_log
+        return loss.data[0]
 
     def test(self):
         self.net.eval() # eval mode

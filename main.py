@@ -30,6 +30,8 @@ class AudioWonderNet(nn.Module):
 
         self.features = nn.Sequential()
 
+        self.count = 0
+
         conv_input = 1
         output = 16
         fc_in = input_size//output # compute fc size pls
@@ -50,8 +52,12 @@ class AudioWonderNet(nn.Module):
     def forward(self, x):
         h = self.features(x)
         h = h.view(h.size(0), -1) # reshapes tensor, replacing fc layer - dumdum
-        print('yo h:', h.shape)
+        # print('yo h:', h.shape)
         h = self.final(h)
+
+        self.count += 1
+        print(self.count)
+
         return h
 
 net = AudioWonderNet(4)
