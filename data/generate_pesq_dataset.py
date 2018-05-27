@@ -82,7 +82,8 @@ patches = []
 
 print(hr_dataset.shape)
 
-indexes = list(range(200)) # hr_dataset.shape[0]))
+indexes = list(range(hr_dataset.shape[0]))
+
 random.shuffle(indexes)
 for hi in indexes:
 
