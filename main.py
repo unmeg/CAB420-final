@@ -42,7 +42,7 @@ class AudioWonderNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(128 * 512, num_classes) # after features block we have a tensor of [1, 128, 512].
+        self.final = nn.Linear(557056, num_classes) # after features block we have a tensor of 1, 557056
 
 
     def forward(self, x):
