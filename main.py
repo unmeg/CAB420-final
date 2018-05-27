@@ -8,15 +8,17 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 import numpy as np
+from data.dataloader import HDF5PatchesDataset
 
 filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
 num_epochs = 50
 num_classes = 50
-training = 0
+training = 1
 input_size = 8192
 
 
@@ -63,25 +65,27 @@ loss_log = []
 if num_gpus > 0:
     dtype = torch.cuda.FloatTensor
     net.cuda()
+    loss_function.type(dtype)
 
 if num_gpus > 1:
     net = nn.DataParallel(net).cuda()
 
 # / GPU STUFF
 
-## DUMMY DATA
-test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
-print('input shape: ', test_in.shape)
-outties = net(test_in)
-print('output shape: ', outties.shape)
+# DUMMY DATA
+if not training:
+    test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
+    print('input shape: ', test_in.shape)
+    outties = net(test_in)
+    print('output shape: ', outties.shape)
 
 
 # REAL DATA
-train_dataset = HDF5PatchesDataset('train_pesq.hdf5')
-train_dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
+train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers=0, shuffle=True)
 
 
-# # training
+# training
 
 if(training):
     for epoch in range(starting_epoch, num_epochs):
@@ -91,12 +95,13 @@ if(training):
             # x_var = Variable(x.type(dtype))
             # y_var = Variable(y.type(dtype))
             x_var = x.cuda(non_blocking=True)
-            y_var = y.cuda(non_blocking=True)
+            y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
 
             # Forward pass
             out = net(x_var)
             # Compute loss
+            print(y_var.data)
             loss = loss_function(out, y_var)
             loss_log.append(loss.item())
             # Zero gradients before the backward pass
@@ -106,3 +111,4 @@ if(training):
             # Update the params
             optimizer.step()
 
+            print(loss.item())

@@ -19,10 +19,10 @@ class HDF5PatchesDataset(Dataset):
     def __getitem__(self, idx):
 
         x = self.x_dataset[idx, :, :]
-        y = self.y_dataset[idx, :]
+        y = self.y_dataset[idx]
 
         x = torch.from_numpy(x)
-        y = torch.from_numpy(y)
+        # y = torch.from_numpy(y)
 
         return (x, y)
 

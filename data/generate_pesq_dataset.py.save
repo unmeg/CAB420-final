@@ -2,7 +2,7 @@ import os
 import h5py
 import soundfile as sf
 from pesq_score import *
-#import sounddevice as sd
+import sounddevice as sd
 import time
 import random
 import numpy as np
@@ -82,7 +82,7 @@ patches = []
 
 print(hr_dataset.shape)
 
-indexes = list(range(200)) # hr_dataset.shape[0]))
+indexes = list(range(2hr_dataset.shape[0]))
 random.shuffle(indexes)
 for hi in indexes:
 
