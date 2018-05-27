@@ -57,31 +57,31 @@ class AudioWonderNet(nn.Module):
         return h
 
 net = AudioWonderNet(4)
-optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
-loss_function = nn.CrossEntropyLoss()
+# optimizer = optim.Adam(params=net.parameters(), lr=learning_rate)
+# loss_function = nn.CrossEntropyLoss()
 
-# GPU STUFF
-dtype = torch.FloatTensor
-num_gpus = torch.cuda.device_count()
-loss_log = []
+# # GPU STUFF
+# dtype = torch.FloatTensor
+# num_gpus = torch.cuda.device_count()
+# loss_log = []
 
-# Check how many GPUs, do cuda/DataParallel accordingly
-if num_gpus > 0:
-    dtype = torch.cuda.FloatTensor
-    net.cuda()
-    loss_function.type(dtype)
+# # Check how many GPUs, do cuda/DataParallel accordingly
+# if num_gpus > 0:
+#     dtype = torch.cuda.FloatTensor
+#     net.cuda()
+#     loss_function.type(dtype)
 
-if num_gpus > 1:
-    net = nn.DataParallel(net).cuda()
+# if num_gpus > 1:
+#     net = nn.DataParallel(net).cuda()
 
 # / GPU STUFF
 
 # DUMMY DATA
-if not training:
-    test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
-    print('input shape: ', test_in.shape)
-    outties = net(test_in)
-    print('output shape: ', outties.shape)
+# if not training:
+#     test_in = Variable(torch.from_numpy(np.sin(np.linspace(0, 2*np.pi, 8192)))).unsqueeze(0).unsqueeze(0).float()
+#     print('input shape: ', test_in.shape)
+#     outties = net(test_in)
+#     print('output shape: ', outties.shape)
 
 
 # REAL DATA
