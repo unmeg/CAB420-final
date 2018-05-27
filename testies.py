@@ -86,8 +86,8 @@ class Testies(object):
                 x_var = x.cuda(non_blocking=True)
                 y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
             else:
-                x_var = Variable(x.type(self.dtype))
-                y_var = Variable(y.type(self.dtype)).type(torch.LongTensor)
+                x_var = Variable(x.type(torch.FloatTensor))
+                y_var = Variable(y.type(torch.LongTensor))
 
             # Forward pass
             out = self.net(x_var)
@@ -103,7 +103,7 @@ class Testies(object):
             self.optimizer.step()
 
             # print(loss.item())
-        return loss.data[0]
+        return loss.item()
 
     def test(self):
         self.net.eval() # eval mode
@@ -118,6 +118,8 @@ class Testies(object):
                 x_var = Variable(x, volatile=True).cuda(non_blocking=True)
             else:
                 x_var = Variable(x.type(self.dtype), volatile=True)
+
+            y = y.type(torch.LongTensor)
 
             outputs = self.net(x_var)
             _, predicted = torch.max(outputs.data, 1)
