@@ -21,6 +21,7 @@ class Testies(object):
             starting_epoch (int)
             num_epochs (int)
             checkpoint_every_epochs (int)
+            test_threshold (float)
             optimizer
             loss_function
     """
@@ -31,7 +32,8 @@ class Testies(object):
         learning_rate=1e-4,
         starting_epoch=0,
         num_epochs=50,
-        checkpoint_every_epochs=10,
+        checkpoint_every_epochs=5,
+        test_threshold=0.5,
         optimizer=None,
         loss_function=None
     ):
@@ -43,6 +45,7 @@ class Testies(object):
 
         self.starting_epoch = starting_epoch
         self.num_epochs = num_epochs
+        self.test_threshold = test_threshold
 
         self.batch_size = 128
         self.generate_dataloaders()
@@ -182,7 +185,8 @@ class Testies(object):
             _, predicted = torch.max(outputs.data, 1)
 
             total += y.size(0)
-            correct += (predicted.cpu() == y).sum()
+            # correct += (predicted.cpu() == y).sum()
+            correct += (abs(predicted.cpu() - y) <= self.test_threshold).sum()
 
         accuracy = 100 * correct / total
         return accuracy
