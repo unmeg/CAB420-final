@@ -55,6 +55,7 @@ class AudioMagicNet(nn.Module):
 
     def forward(self, x):
         h = self.features(x)
+        # print('h shape: ', h.shape)
         h = h.view(h.size(0), -1)
         h = self.final(h)
         return h

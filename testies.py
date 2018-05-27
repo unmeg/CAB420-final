@@ -207,10 +207,21 @@ class Testies(object):
         total = 0
 
         for x, y in self.test_dl:
+            if self.mfcc:
+                s = np.abs(librosa.core.stft(y=x.detach().numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
+                test_input = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
+                test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)
+                x = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+
             if self.num_gpus > 0:
-                x_var = Variable(x).cuda(non_blocking=True)
+                x_var = x.cuda(non_blocking=True)
             else:
-                x_var = Variable(x.type(self.dtype))
+                x_var = Variable(x.type(torch.FloatTensor))
+
+            # if self.num_gpus > 0:
+            #     x_var = Variable(x).cuda(non_blocking=True)
+            # else:
+            #     x_var = Variable(x.type(self.dtype))
 
             y = y.type(torch.LongTensor)
 
