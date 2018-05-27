@@ -91,9 +91,9 @@ outties = net(test_in)
 print('output shape: ', outties.shape)
 
 
-# # REAL DATA
-# train_dataset = HDF5PatchesDataset('train_pesq.hdf5')
-# train_dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
+# REAL DATA
+train_dataset = HDF5PatchesDataset('train_pesq.hdf5')
+train_dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
 
 # Try and load the checkpoint
 if not os.path.exists(checkpoint_dir):
