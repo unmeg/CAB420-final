@@ -17,11 +17,10 @@ import librosa
 import librosa.display
 
 
-n_mfcc = 13
-n_mels = 40
+n_mels = 80
 n_fft = 512
-win_length = 400 # 0.025*16000
-hop_length = 160 # 0.010 * 16000
+win_length = 400 # 0.025 x 16000
+hop_length = 160 # 0.010 x 16000
 window = 'hamming'
 fmin = 20
 fmax = 4000
@@ -34,18 +33,14 @@ training = 0
 input_size = 8192
 
 
-## USING LIBROSA
-MELWINDOW = 200
-MELBANK = 80
+# y, sr = librosa.load('test.wav')
 
-y, sr = librosa.load('test.wav')
-
-s = np.abs(librosa.core.stft(y=y, n_fft=800, hop_length=MELWINDOW, window='hann', center=True)) # pre-computed power spec
-test_input = librosa.feature.melspectrogram(S=s, n_mels=MELBANK, fmax=7600, fmin=125, power=2, n_fft = 800, hop_length=MELWINDOW) # passed to melfilters
-print('input shape1', test_input.shape)
-test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
-test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
-# librosa.display.specshow(voice_input_oh, y_axis='log', x_axis='time')
+# s = np.abs(librosa.core.stft(y=y, n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+# test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be MELWINDOW
+# print('input shape1', test_input.shape)
+# test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
+# test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+# librosa.display.specshow(test_input, y_axis='log', x_axis='time')
 # plt.title('Power spectrogram')
 # plt.colorbar(format='%+2.0f dB')
 # plt.tight_layout()
@@ -73,7 +68,7 @@ class AudioMagicNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(26880, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
+        self.final = nn.Linear(33280, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
         
         
     def forward(self, x):
@@ -108,7 +103,7 @@ checkpoint_epoch = 0
 checkpoint_dir = 'checkpoints/'
 
 tensor_label = 'tb_mfcc_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-tensorboard = True
+tensorboard = False
 plot = 0
 
 
@@ -161,6 +156,11 @@ if(training):
             x_var = x.cuda(non_blocking=True)
             y_var = y.cuda(non_blocking=True)
            
+            s = np.abs(librosa.core.stft(y=y, n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+            test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+            test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
+            test_input = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+
             # Forward pass
             out = net(x_var)
             # Compute loss
