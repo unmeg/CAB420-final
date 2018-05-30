@@ -168,8 +168,8 @@ if(training):
             x_var = x_var.cuda(non_blocking=True)
             print('wtf y', y.shape)
             y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor).unsqueeze(1)[0]
-            print (y_var)
-
+            print ('the tensor', y_var)
+            print('the get item is this', v_var.item())
             # Forward pass
             out = net(x_var)
             # Compute loss
