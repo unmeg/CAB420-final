@@ -196,8 +196,8 @@ if(training):
             'epoch': epoch,
             'state_dict': net.state_dict(),
             'optimizer' : optimizer.state_dict(),
-            'best_loss' : scheduler.best,
-            'bad_epoch' : scheduler.num_bad_epochs,
+            # 'best_loss' : scheduler.best,
+            # 'bad_epoch' : scheduler.num_bad_epochs,
             'loss_log' : loss_log
         }
         torch.save(save_state, save_file)
