@@ -166,6 +166,8 @@ if(training):
             x_vals = []
             
             for thing in range(0, batch_size):
+                go_in = x[thing,0,:]
+                print('in size: ', go_in.shape)
                 s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy().squeeze(0).squeeze(0), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
                 test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
                 x_vals.append(test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)) #logamplitude)
