@@ -36,7 +36,8 @@ if __name__ == '__main__':
     import sounddevice as sd
     import matplotlib.pyplot as plt
 
-    dataset = HDF5PatchesDataset('train_pesq.hdf5')
+    # dataset = HDF5PatchesDataset('train_pesq.hdf5')
+    dataset = HDF5PatchesDataset('/home/mining-test/dataset/train_pesq_small.hdf5')
 
     dataloader = DataLoader(dataset, batch_size=64, num_workers=0, shuffle=True)
 
