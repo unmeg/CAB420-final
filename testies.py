@@ -96,7 +96,7 @@ class Testies(object):
         self.checkpoint_label = checkpoint_label
         self.load_checkpoint()
 
-        self.tensorboard = False
+        self.tensorboard = True
         self.plot = 0
         self.init_writer()
 
