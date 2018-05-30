@@ -160,6 +160,12 @@ class Testies(object):
 
         self.writer = SummaryWriter('./logs/' + tensor_label)
 
+    def prepareMfcc(self, x):
+        s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
+        spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+        x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
+        return Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
+
 
     def train(self):
         # turn on training mode
@@ -169,11 +175,7 @@ class Testies(object):
 
             if self.mfcc:
                 print(x.shape)
-                s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
-                spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-                x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
-
-                x = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
+                x = self.prepareMfcc(x)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
@@ -210,10 +212,7 @@ class Testies(object):
 
         for x, y in self.test_dl:
             if self.mfcc:
-                s = np.abs(librosa.core.stft(y=x.detach().numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
-                test_input = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
-                test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)
-                x = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+                x = self.prepareMfcc(x)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)

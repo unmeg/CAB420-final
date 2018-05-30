@@ -22,7 +22,7 @@ from testies import Testies
 import numpy as np
 from data.dataloader import HDF5PatchesDataset
 
-checkpoint_label = 'mfcc_16'
+checkpoint_label = 'mfcc'
 filter_size = 3
 learning_rate = 1e-4
 starting_epoch = 0
@@ -61,7 +61,7 @@ class AudioMagicNet(nn.Module):
         h = self.final(h)
         return h
 
-net = AudioMagicNet(16)
+net = AudioMagicNet(4)
 
 dataset = HDF5PatchesDataset('../dataset/train_pesq_small.hdf5')
 
