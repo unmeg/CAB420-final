@@ -170,9 +170,12 @@ if(training):
                 print('in size: ', go_in.shape)
                 s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
                 test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-                x_vals.append(test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)) #logamplitude)
+                print('melspec size: ', test_input.shape)
+                x_vals.append(librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)) #logamplitude)
                 
-            x_hold = np.concatenate( LIST, axis=0 )
+            x_hold = np.concatenate( x_vals, axis=0 )
+            print('full batch size: ', x_hold.shape)
+
             x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
             
             x_var = x_var.cuda(non_blocking=True)
