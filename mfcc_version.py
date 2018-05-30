@@ -175,6 +175,7 @@ if(training):
                 x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
             
                 x_var = x_var.cuda(non_blocking=True)
+                print('wtf y', y)
                 y_var = y[thing].cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
                  # Forward pass
