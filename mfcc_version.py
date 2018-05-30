@@ -156,6 +156,41 @@ if(training):
     for epoch in range(starting_epoch, num_epochs):
     
         for i, (x, y) in enumerate(train_dataloader):
+            go_in = x[i,0,:]
+            print('in size: ', go_in.shape)
+            s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+            spectro = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+            print('melspec size: ', spectro.shape)
+            x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
+
+            x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
+        
+            x_var = x_var.cuda(non_blocking=True)
+            print('wtf y', y.shape)
+            y_var = y[i].cuda(non_blocking=True).type(torch.cuda.LongTensor)
+
+                # Forward pass
+            out = net(x_var)
+            # Compute loss
+            loss = loss_function(out, y_var)
+            loss_log.append(loss.item())
+            # Zero gradients before the backward pass
+            optimizer.zero_grad()
+            # Backprop
+            loss.backward()
+            # Update the params
+            optimizer.step()
+
+            if tensorboard:
+                writer.add_scalar('train/loss', loss.item(), plot)
+                plot += 1
+                
+            
+
+
+
+
+
             
             # x_var = Variable(x.type(dtype))
             # y_var = Variable(y.type(dtype))
@@ -164,35 +199,35 @@ if(training):
             # print(y_var.shape)
             # x_vals = []
             
-            for thing in range(0, batch_size):
-                go_in = x[thing,0,:]
-                print('in size: ', go_in.shape)
-                s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
-                spectro = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-                print('melspec size: ', spectro.shape)
-                x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
+            # for thing in range(0, batch_size):
+            #     go_in = x[thing,0,:]
+            #     print('in size: ', go_in.shape)
+            #     s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+            #     spectro = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+            #     print('melspec size: ', spectro.shape)
+            #     x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
 
-                x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
+            #     x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
             
-                x_var = x_var.cuda(non_blocking=True)
-                print('wtf y', y)
-                y_var = y[thing,0].cuda(non_blocking=True).type(torch.cuda.LongTensor)
+            #     x_var = x_var.cuda(non_blocking=True)
+            #     print('wtf y', y)
+            #     y_var = y[thing,0].cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
-                 # Forward pass
-                out = net(x_var)
-                # Compute loss
-                loss = loss_function(out, y_var)
-                loss_log.append(loss.item())
-                # Zero gradients before the backward pass
-                optimizer.zero_grad()
-                # Backprop
-                loss.backward()
-                # Update the params
-                optimizer.step()
+            #      # Forward pass
+            #     out = net(x_var)
+            #     # Compute loss
+            #     loss = loss_function(out, y_var)
+            #     loss_log.append(loss.item())
+            #     # Zero gradients before the backward pass
+            #     optimizer.zero_grad()
+            #     # Backprop
+            #     loss.backward()
+            #     # Update the params
+            #     optimizer.step()
 
-                if tensorboard:
-                    writer.add_scalar('train/loss', loss.item(), plot)
-                    plot += 1
+            #     if tensorboard:
+            #         writer.add_scalar('train/loss', loss.item(), plot)
+            #         plot += 1
                     
             # x_hold = np.concatenate( x_vals, axis=0 )
             # print('full batch size: ', x_hold.shape)
