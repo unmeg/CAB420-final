@@ -2,7 +2,6 @@ import os
 import h5py
 import soundfile as sf
 from pesq_score import *
-#import sounddevice as sd
 import time
 import random
 import numpy as np
@@ -14,12 +13,14 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
 
-write_every_patches = 10
-max_patches = 100
+input_hdf5 = '/home/mining-test/dataset/train_vctk_patches.hdf5'
+output_hdf5 = '/home/mining-test/dataset/train_pesq_large_2.hdf5'
+
+num_processes = 8
+num_patches = 100
 num_classes = 50
 pesq_sr = 16000
-input_hdf5 = 'train_vctk_patches.hdf5'
-output_hdf5 = 'train_pesq_large.hdf5'
+sampling_rates = [16000, 8000, 4000, 2000, 1000]
 
 
 def score2index(score):
@@ -59,12 +60,8 @@ def upsample(x_lr, r):
 
 def resample(x, original_sr, new_sr, filename, noise):
     r = original_sr // new_sr
-    print('\n', x.shape)
-    print(r)
     resampled = x[::r].copy() # librosa.resample(x.copy(), original_sr, new_sr, res_type='kaiser_fast')
-    print('sub', resampled.shape)
     resampled = upsample(resampled, r)
-    print('up', resampled.shape)
 
     # generate cracking noise thing
     if noise:
@@ -73,113 +70,95 @@ def resample(x, original_sr, new_sr, filename, noise):
         r[~b] = 0
         r[b] = np.random.rand(1) * 0.05
         resampled += r
-    filename_out = os.path.join('temp', str(new_sr) + '_' + str(noise) + '_' + filename)
+    filename_out = os.path.join('temp', str(new_sr) + '_' + str(noise) + '_' + str(random.randint(0,10000000)) + '_' + filename)
     sf.write(filename_out, resampled, pesq_sr, 'PCM_16')
-    print('out', resampled.shape)
     return (filename_out, resampled)
+
 
 # get patches dataset into memory
 input_hdf5_file = h5py.File(input_hdf5, 'r')
 hr_dataset = input_hdf5_file['hr']
 print(hr_dataset.shape)
 
+
 # open output hdf5 file and prepare for resizing
 output_hdf5_file = h5py.File(output_hdf5, 'w')
 x_dataset = output_hdf5_file.create_dataset("x", (1, 1, 8192), maxshape=(None, 1, 8192), dtype=np.float32)
 y_dataset = output_hdf5_file.create_dataset("y", (1,), maxshape=(None,), dtype=np.int32)
 
-ni = 0
-n = min(max_patches, hr_dataset.shape[0])
-indexes = list(range(n))
-random.shuffle(indexes)
-print('patches:', n)
-print('input shape:', hr_dataset.shape)
 
-scores = []
-patches = []
+def generate(data):
+    scores = []
+    patches = []
 
-for hi in indexes:
+    indexes = list(range(len(data)))
+    random.shuffle(indexes)
 
-    ni += 1
-    print('{:.2f}%'.format(ni * 100 / n))
+    for hi in indexes:
 
-    # grab a hr patch from the hdf5
-    x = hr_dataset[hi, 0, :]
-    hr_filename = '{:d}_hr.wav'.format(hi)
+        # grab a hr patch from the hdf5
+        x = data[hi, :]
+        hr_filename = '{:d}_hr.wav'.format(hi)
 
-    # store filenames in here of the downsampled and noisy (degraded) versions of this patch
-    these_scores = []
-    degraded_x = []
+        # store filenames in here of the downsampled and noisy (degraded) versions of this patch
+        degraded_x = []
 
-    # take the hr reference and downsample it to the following sr's, make one with noise and one without for each
-    sampling_rates = [16000, 8000, 4000, 2000, 1000]
-    for sr in sampling_rates:
-        degraded_x.append(resample(x, 16000, sr, hr_filename, False))
-        degraded_x.append(resample(x, 16000, sr, hr_filename, True))
+        # take the hr reference and downsample it to the following sr's, make one with noise and one without for each
+        for sr in sampling_rates:
+            degraded_x.append(resample(x, 16000, sr, hr_filename, False))
+            degraded_x.append(resample(x, 16000, sr, hr_filename, True))
 
-    # get the score of every degraded version
-    for i in range(len(degraded_x)):
-        try:
-            score = get_pesq(degraded_x[0][0], degraded_x[i][0])
-            these_scores.append(score2index(score))
-            patches.append(np.append(degraded_x[0][1], degraded_x[-1][1]))
-        except Exception as e:
-            pass
-        finally:
-            if i > 0:
+        # get the score of every degraded version
+        for i in range(len(degraded_x)):
+            try:
+                score = get_pesq(degraded_x[0][0], degraded_x[i][0])
+                scores.append(score2index(score))
+                patches.append(np.append(degraded_x[0][1], degraded_x[i][1]))
+            except Exception as e:
                 pass
-                os.remove(degraded_x[i][0])
+            finally:
+                if i > 0:
+                    pass
+                    os.remove(degraded_x[i][0])
 
-    os.remove(degraded_x[0][0])
+        os.remove(degraded_x[0][0])
 
-    # print('\n')
-    # for di in range(len(these_scores)):
-    #     print('{:.3f}\t{:s}'.format(these_scores[di], os.path.basename(degraded_x[di][0])))
+        return patches, scores
 
-    scores += these_scores
+    # if len(patches) >= write_every_patches:
+    #     patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
+    #     scores = np.array(scores, dtype=np.int32)
+    #     assert patches.shape[0] == scores.shape[0], "patches and score size don't match!"
+    #     x_dataset.resize(x_dataset.shape[0] - 1 + patches.shape[0], axis=0)
+    #     y_dataset.resize(y_dataset.shape[0] - 1 + scores.shape[0], axis=0)
+    #     print(x_dataset.shape, y_dataset.shape)
+    #     x_dataset[x_dataset.shape[0] - write_every_patches : x_dataset.shape[0], :, :] = patches
+    #     y_dataset[y_dataset.shape[0] - write_every_patches : y_dataset.shape[0]] = scores
+    #     patches = []
+    #     scores = []
 
-    if len(patches) >= write_every_patches:
-        patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
-        scores = np.array(scores, dtype=np.int32)
-        print(patches.shape, scores.shape)
-        assert patches.shape[0] == scores.shape[0], "patches and score size don't match!"
-        x_dataset.resize(x_dataset.shape[0] - 1 + patches.shape[0], axis=0)
-        y_dataset.resize(y_dataset.shape[0] - 1 + scores.shape[0], axis=0)
-        print(x_dataset.shape, y_dataset.shape)
-        x_dataset[x_dataset.shape[0] - write_every_patches : x_dataset.shape[0], :, :] = patches
-        y_dataset[y_dataset.shape[0] - write_every_patches : y_dataset.shape[0]] = scores
-        patches = []
-        scores = []
+n = num_patches
+ni = 0
+a = list(np.array(hr_dataset)[:n])
 
-# a = np.array(hr_dataset)[1:10]
-# print(a.shape)
+with Pool(num_processes) as p:
+    res = p.imap_unordered(generate, a)
+    for x in res:
+        if len(x[0]) > 1 and len(x[1]) > 1:
+            patches =  x[0]
+            scores = x[1]
+            patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
+            scores = np.array(scores, dtype=np.int32)
+            assert patches.shape[0] == scores.shape[0], "patches and score size don't match!"
+            x_dataset.resize(x_dataset.shape[0] - 1 + patches.shape[0], axis=0)
+            y_dataset.resize(y_dataset.shape[0] - 1 + scores.shape[0], axis=0)
+            ni += 1
+            print('{:.2f}%'.format(ni*100/n), x_dataset.shape, y_dataset.shape)
+            x_dataset[x_dataset.shape[0] - patches.shape[0] : x_dataset.shape[0], :, :] = patches
+            y_dataset[y_dataset.shape[0] - patches.shape[0] : y_dataset.shape[0]] = scores
 
-# patches = []
-# scores = []
-
-# with Pool(8) as p:
-#     res = p.imap_unordered(generate, a)
-#     for x in res:
-#         if len(x[0]) > 0 and len(x[1]) > 0:
-#             for i in range(len(x[0][0])):
-#                 patches.append(x[0][i])
-#                 scores.append(x[])
-
-# patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
-# scores = np.array(scores, dtype=np.int32)
-
-# print(patches.shape)
-# print(scores.shape)
-
-# with h5py.File(output_hdf5, 'w') as f:
-#     x = f.create_dataset("x", patches.shape, dtype=np.float32)
-#     y = f.create_dataset("y", scores.shape, dtype=np.int32)
-
-#     x[...] = patches
-#     y[...] = scores
-
+print('\ntest saved hdf5 file:', output_hdf5)
 h5_file = h5py.File(output_hdf5, 'r')
 x = h5_file['x']
 y = h5_file['y']
 print(x.shape, y.shape)
-

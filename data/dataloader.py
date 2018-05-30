@@ -36,16 +36,27 @@ if __name__ == '__main__':
     import sounddevice as sd
     import matplotlib.pyplot as plt
 
-    dataset = HDF5PatchesDataset('train_pesq.hdf5')
+    dataset = HDF5PatchesDataset('train_pesq_large_2.hdf5')
 
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
 
     for i, (x, y) in enumerate(dataloader):
-        print('\nBatch', i, 'Sizes:', x.size(), y.size())
-        print('min:', x.min(), 'max:', x.max(), 'mean:', x.mean())
-        print('min:', y.min(), 'max:', y.max(), 'mean:', y.mean())
+        # print('\nBatch', i, 'Sizes:', x.size(), y.size())
+        # print('min:', x.min(), 'max:', x.max(), 'mean:', x.mean())
+        # print('min:', y.min(), 'max:', y.max(), 'mean:', y.mean())
 
-        sd.play(x[0, 0, :].numpy(), 16000)
+        print()
+        print(y.item())
+        sd.play(x[0, 0, :4095].numpy(), 16000)
+        sd.wait()
+
+        time.sleep(0.5)
+
+        sd.play(x[0, 0, 4096:8191].numpy(), 16000)
         sd.wait()
 
         time.sleep(2)
+
+        # plt.plot(x[0, 0, :].numpy())
+        # plt.title(str(y))
+        # plt.show()
