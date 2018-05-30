@@ -63,7 +63,7 @@ class AudioMagicNet(nn.Module):
 
 net = AudioMagicNet(16)
 
-dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+dataset = HDF5PatchesDataset('../dataset/train_pesq_small.hdf5')
 
 if training:
     testies = Testies(net, dataset, mfcc=True, checkpoint_label=checkpoint_label)
