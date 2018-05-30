@@ -34,6 +34,8 @@ num_epochs = 50
 num_classes = 50 # gives us a category for every half step?
 training = 1
 input_size = 8192
+batch_size=64
+
 
 
 # y, sr = librosa.load('test.wav')
@@ -118,7 +120,7 @@ plot = 0
 
 
 train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers = 0, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers = 0, shuffle=True)
 
 # Try and load the checkpoint
 if not os.path.exists(checkpoint_dir):
@@ -161,11 +163,15 @@ if(training):
             # y_var = Variable(y.type(dtype))
       #      x_var = x.cuda(non_blocking=True)
             y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
-           
-            s = np.abs(librosa.core.stft(y=x.numpy().squeeze(0).squeeze(0), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
-            test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-            test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
-            x_var = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
+            x_vals = []
+            
+            for thing in range(0, batch_size):
+                s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy().squeeze(0).squeeze(0), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+                test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+                x_vals.append(test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)) #logamplitude)
+                
+            x_hold = np.concatenate( LIST, axis=0 )
+            x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
             
             x_var = x_var.cuda(non_blocking=True)
 
