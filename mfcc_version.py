@@ -35,6 +35,7 @@ num_classes = 50 # gives us a category for every half step?
 training = 1
 input_size = 8192
 batch_size=64
+checkpoint_every_epochs = 20
 
 
 
