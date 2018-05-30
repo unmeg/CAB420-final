@@ -160,9 +160,9 @@ class Testies(object):
 
         self.writer = SummaryWriter('./logs/' + tensor_label)
 
-    def prepareMfcc(self, x):
+    def prepareMfcc(self, x, i):
         s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
-        spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+        spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length) # passed to melfilters == hop_length used to be 200
         x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
         return Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
 
@@ -175,7 +175,7 @@ class Testies(object):
 
             if self.mfcc:
                 print(x.shape)
-                x = self.prepareMfcc(x)
+                x = self.prepareMfcc(x, i)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
@@ -212,7 +212,7 @@ class Testies(object):
 
         for x, y in self.test_dl:
             if self.mfcc:
-                x = self.prepareMfcc(x)
+                x = self.prepareMfcc(x, i)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
