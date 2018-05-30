@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     dataset = HDF5PatchesDataset('train_pesq.hdf5')
 
-    dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=64, num_workers=0, shuffle=True)
 
     for i, (x, y) in enumerate(dataloader):
         print('\nBatch', i, 'Sizes:', x.size(), y.size())
