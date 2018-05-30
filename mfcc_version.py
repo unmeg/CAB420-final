@@ -169,8 +169,8 @@ if(training):
                 print('in size: ', go_in.shape)
                 s = np.abs(librosa.core.stft(y=x[thing,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
                 spectro = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-                print('melspec size: ', test_input.shape)
-                x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0)) #logamplitude)
+                print('melspec size: ', spectro.shape)
+                x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
 
                 x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
             
