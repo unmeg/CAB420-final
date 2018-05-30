@@ -34,6 +34,9 @@ num_epochs = 50
 num_classes = 50 # gives us a category for every half step?
 training = 1
 input_size = 8192
+batch_size=64
+checkpoint_every_epochs = 20
+
 
 
 # y, sr = librosa.load('test.wav')
@@ -49,8 +52,6 @@ input_size = 8192
 # plt.tight_layout()
 # plt.show()
 
-input_size = 678
-
 class AudioMagicNet(nn.Module):
     def __init__(self, blocks):
         super(AudioMagicNet, self).__init__()
@@ -59,7 +60,7 @@ class AudioMagicNet(nn.Module):
 
         conv_input = 1
         output = 16 # get the size
-        fc_in = input_size//output # compute fc size pls
+        fc_in = input_last_out = 0
 
         for b in range(0,blocks):
             i = b+1
@@ -118,7 +119,7 @@ plot = 0
 
 
 train_dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
-train_dataloader = DataLoader(train_dataset, batch_size=1, num_workers = 0, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers = 0, shuffle=True)
 
 # Try and load the checkpoint
 if not os.path.exists(checkpoint_dir):
@@ -157,17 +158,18 @@ if(training):
     
         for i, (x, y) in enumerate(train_dataloader):
             
-            # x_var = Variable(x.type(dtype))
-            # y_var = Variable(y.type(dtype))
-      #      x_var = x.cuda(non_blocking=True)
-            y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
-           
-            s = np.abs(librosa.core.stft(y=x.numpy().squeeze(0).squeeze(0), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
-            test_input = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
-            test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude
-            x_var = Variable(torch.from_numpy(test_input).float()).unsqueeze(0).unsqueeze(0)
-            
-            x_var = x_var.cuda(non_blocking=True)
+            s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=n_fft, hop_length=hop_length, window='hann', center=True)) # pre-computed power spec
+            spectro = librosa.feature.melspectrogram(S=s, n_mels=n_mels, fmax=7600, fmin=125, power=2, n_fft = n_fft, hop_length=hop_length) # passed to melfilters == hop_length used to be 200
+            # print('melspec size: ', spectro.shape)
+            x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
+
+            x_var = Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0).cuda(non_blocking=True)
+            y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor).unsqueeze(1)[0]
+            # NOTE: y_var.item() is the value in this single-value tensor.. not sure which is better for us?
+
+            # print ('the tensor', y_var)
+            # print('the get item is this', y_var.item())
+
 
             # Forward pass
             out = net(x_var)
@@ -184,6 +186,8 @@ if(training):
             if tensorboard:
                 writer.add_scalar('train/loss', loss.item(), plot)
                 plot += 1
+                
+            
 
     # Save checkpoint
     if (epoch % checkpoint_every_epochs == 0 or epoch == (num_epochs-1)) and (epoch != starting_epoch):
@@ -192,8 +196,8 @@ if(training):
             'epoch': epoch,
             'state_dict': net.state_dict(),
             'optimizer' : optimizer.state_dict(),
-            'best_loss' : scheduler.best,
-            'bad_epoch' : scheduler.num_bad_epochs,
+            # 'best_loss' : scheduler.best,
+            # 'bad_epoch' : scheduler.num_bad_epochs,
             'loss_log' : loss_log
         }
         torch.save(save_state, save_file)
