@@ -168,6 +168,7 @@ class Testies(object):
         for i, (x, y) in enumerate(self.train_dl):
 
             if self.mfcc:
+                print(x.shape)
                 s = np.abs(librosa.core.stft(y=x.detach().numpy().squeeze(0).squeeze(0), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
                 test_input = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
                 test_input = librosa.core.amplitude_to_db(S=test_input, ref=1.0, amin=5e-4, top_db=80.0)

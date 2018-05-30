@@ -17,7 +17,7 @@ from multiprocessing import Pool
 num_classes = 50
 pesq_sr = 16000
 input_hdf5 = 'train_vctk_patches.hdf5'
-output_hdf5 = 'train_pesq.hdf5'
+output_hdf5 = 'train_pesq_large.hdf5'
 
 
 def score2index(score):
@@ -82,10 +82,17 @@ patches = []
 
 print(hr_dataset.shape)
 
-indexes = list(range(hr_dataset.shape[0]))
+n = 25000  #hr_dataset.shape[0]
+indexes = list(range(n))
+
+print(n)
 
 random.shuffle(indexes)
+ni = 0
 for hi in indexes:
+
+    ni += 1
+    print('{:.2f}%'.format(ni * 100 / n))
 
     # grab a hr patch from the hdf5
     x = hr_dataset[hi, :]
