@@ -176,7 +176,7 @@ if(training):
             
                 x_var = x_var.cuda(non_blocking=True)
                 print('wtf y', y)
-                y_var = y[thing].cuda(non_blocking=True).type(torch.cuda.LongTensor)
+                y_var = y[thing,0].cuda(non_blocking=True).type(torch.cuda.LongTensor)
 
                  # Forward pass
                 out = net(x_var)
