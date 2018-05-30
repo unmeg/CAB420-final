@@ -161,6 +161,7 @@ if(training):
             # y_var = Variable(y.type(dtype))
       #      x_var = x.cuda(non_blocking=True)
             y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
+            print(y_var.shape)
             x_vals = []
             
             for thing in range(0, batch_size):
