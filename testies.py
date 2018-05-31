@@ -210,7 +210,7 @@ class Testies(object):
         correct = 0
         total = 0
 
-        for x, y in self.test_dl:
+        for i, (x, y) in enumerate(self.train_dl):
             if self.mfcc:
                 x = self.prepareMfcc(x, i)
 
