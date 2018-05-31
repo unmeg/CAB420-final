@@ -22,7 +22,8 @@ from testies import Testies
 import numpy as np
 from data.dataloader import HDF5PatchesDataset
 
-filter_size = 3
+
+filter_size = 65
 learning_rate = 1e-4
 starting_epoch = 0
 num_epochs = 50
@@ -45,7 +46,7 @@ class AudioWonderNet(nn.Module):
 
         for b in range(0,blocks):
             i = b+1
-            self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=1)), # padding/stride?
+            self.features.add_module("conv"+str(i),nn.Conv1d(conv_input, output, filter_size, stride=1, padding=32)), # padding/stride?
             self.features.add_module("bn"+str(i),nn.BatchNorm1d(output)),
             self.features.add_module("relu"+str(i),nn.LeakyReLU()),
             self.features.add_module("pool"+str(i),nn.MaxPool1d(2))
@@ -65,7 +66,7 @@ class AudioWonderNet(nn.Module):
 
 net = AudioWonderNet(4)
 
-dataset = HDF5PatchesDataset('data/train_pesq_large.hdf5')
+dataset = HDF5PatchesDataset('/home/mining-test/dataset/train_pesq_large.hdf5')
 
 if training:
     testies = Testies(net, dataset)

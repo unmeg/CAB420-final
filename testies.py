@@ -41,10 +41,10 @@ class Testies(object):
         test_percent=0.15,
         learning_rate=1e-4,
         starting_epoch=0,
-        num_epochs=50,
+        num_epochs=100,
         checkpoint_every_epochs=5,
-        test_threshold=0.5,
-        checkpoint_label='raw',
+        test_threshold=0.25,
+        checkpoint_label='raw_large_f64',
         mfcc=False,
         n_mels = 80,
         n_fft = 512,
@@ -65,7 +65,7 @@ class Testies(object):
         self.num_epochs = num_epochs
         self.test_threshold = test_threshold
 
-        self.batch_size = 256
+        self.batch_size = 512
         self.generate_dataloaders()
 
         self.optimizer = optimizer or optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
@@ -92,12 +92,13 @@ class Testies(object):
 
         self.checkpoint_every_epochs = checkpoint_every_epochs
         self.loss_log = []
-        self.checkpoint_dir = 'checkpoints/'
+        self.checkpoint_dir = '/home/mining-test/dataset/checkpoints_raw_large_f64/'
         self.checkpoint_label = checkpoint_label
         self.load_checkpoint()
 
-        self.tensorboard = False
+        self.tensorboard = True
         self.plot = 0
+        self.val_plot = 0
         self.init_writer()
 
 
@@ -251,9 +252,13 @@ class Testies(object):
         for epoch in range(self.starting_epoch, self.num_epochs):
             try:
                 loss = self.train()
-                print('Epoch {}/{} training loss: {}%'.format(epoch, self.num_epochs, loss))
+                print('Epoch {}/{} training loss: {:.2f}'.format(epoch, self.num_epochs, loss))
                 accuracy = self.test()
-                print('Epoch {}/{} validation accuracy: {}%.'.format(epoch, self.num_epochs, accuracy))
+                print('Epoch {}/{} validation accuracy: {:.2f}%'.format(epoch, self.num_epochs, accuracy))
+
+                if self.tensorboard:
+                    self.writer.add_scalar('val/accuracy', accuracy, self.val_plot)
+                    self.val_plot += 1
 
                 if loss > best_loss:
                     loss = best_loss
