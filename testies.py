@@ -161,6 +161,7 @@ class Testies(object):
         self.writer = SummaryWriter('./logs/' + tensor_label)
 
     def prepareMfcc(self, x, i):
+        print('i in', i)
         s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
         spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length) # passed to melfilters == hop_length used to be 200
         x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
