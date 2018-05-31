@@ -45,7 +45,7 @@ class Testies(object):
         checkpoint_every_epochs=5,
         test_threshold=0.5,
         checkpoint_label='raw',
-        mfcc=False,
+        mfcc=True,
         n_mels = 80,
         n_fft = 512,
         hop_length = 160, # 0.010 x 16000
@@ -160,12 +160,11 @@ class Testies(object):
 
         self.writer = SummaryWriter('./logs/' + tensor_label)
 
-    def prepareMfcc(self, x, i):
-        print('i in', i)
-        s = np.abs(librosa.core.stft(y=x[i,0,:].numpy(), n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
+    def prepareMfcc(self, x):
+        s = np.abs(librosa.core.stft(y=x, n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
         spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length) # passed to melfilters == hop_length used to be 200
         x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
-        return Variable(torch.from_numpy(x_hold).float()).unsqueeze(0).unsqueeze(0)
+        return x_hold
 
 
     def train(self):
@@ -175,19 +174,22 @@ class Testies(object):
         for i, (x, y) in enumerate(self.train_dl):
 
             if self.mfcc:
-                print(x.shape)
-                x = self.prepareMfcc(x, i)
+                x_raw = x.clone()
+                x = torch.empty((x_raw.shape[0], 1, 80, 52), dtype=x_raw.dtype)
+                for mfcc_i in range(x_raw.shape[0]):
+                    x_mfcc = self.prepareMfcc(x_raw[mfcc_i, 0, :].numpy())
+                    x[mfcc_i, 0, :, :] = torch.from_numpy(x_mfcc)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
                 y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
-                if self.mfcc:
-                    y_var = y_var.unsqueeze(1)[0]
+                # if self.mfcc:
+                #     y_var = y_var.unsqueeze(1)[0]
             else:
                 x_var = Variable(x).type(torch.FloatTensor)
                 y_var = Variable(y).type(torch.LongTensor)
-                if self.mfcc:
-                    y_var = y_var.unsqueeze(1)[0]
+                # if self.mfcc:
+                #     y_var = y_var.unsqueeze(1)[0]
 
             # Forward pass
             out = self.net(x_var)
@@ -216,8 +218,13 @@ class Testies(object):
         total = 0
 
         for i, (x, y) in enumerate(self.train_dl):
+
             if self.mfcc:
-                x = self.prepareMfcc(x, i)
+                x_raw = x.clone()
+                x = torch.empty((x_raw.shape[0], 1, 80, 52), dtype=x_raw.dtype)
+                for mfcc_i in range(x.shape[0]):
+                    x_mfcc = self.prepareMfcc(x_raw[mfcc_i, 0, :].numpy())
+                    x[mfcc_i, 0, :, :] = torch.from_numpy(x_mfcc)
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
