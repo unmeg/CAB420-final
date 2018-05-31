@@ -52,7 +52,7 @@ class AudioMagicNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(17280, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
+        self.final = nn.Linear(1920, num_classes) # hardcoded based on known size (h.shape) >>> 128 x 5 x 42
 
     def forward(self, x):
         h = self.features(x)
