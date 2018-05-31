@@ -65,7 +65,7 @@ class Testies(object):
         self.num_epochs = num_epochs
         self.test_threshold = test_threshold
 
-        self.batch_size = 1
+        self.batch_size = 64
         self.generate_dataloaders()
 
         self.optimizer = optimizer or optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
