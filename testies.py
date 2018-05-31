@@ -38,7 +38,7 @@ class Testies(object):
     def __init__(self,
         net,
         dataset,
-        test_percent=0.3,
+        test_percent=0.15,
         learning_rate=1e-4,
         starting_epoch=0,
         num_epochs=50,
@@ -65,7 +65,7 @@ class Testies(object):
         self.num_epochs = num_epochs
         self.test_threshold = test_threshold
 
-        self.batch_size = 64
+        self.batch_size = 256
         self.generate_dataloaders()
 
         self.optimizer = optimizer or optim.Adam(params=self.net.parameters(), lr=self.learning_rate)
@@ -180,10 +180,14 @@ class Testies(object):
 
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
-                y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor).unsqueeze(1)[0]
+                y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
+                if self.mfcc:
+                    y_var = y_var.unsqueeze(1)[0]
             else:
                 x_var = Variable(x).type(torch.FloatTensor)
-                y_var = Variable(y).type(torch.LongTensor).unsqueeze(1)[0]
+                y_var = Variable(y).type(torch.LongTensor)
+                if self.mfcc:
+                    y_var = y_var.unsqueeze(1)[0]
 
             # Forward pass
             out = self.net(x_var)

@@ -41,7 +41,7 @@ class AudioWonderNet(nn.Module):
 
         conv_input = 1
         output = 16
-        fc_in = input_size//output # compute fc size pls
+        fc_in = input_size // output # compute fc size pls
 
         for b in range(0,blocks):
             i = b+1
@@ -53,7 +53,7 @@ class AudioWonderNet(nn.Module):
             output = conv_input * 2
 
         print(self.features)
-        self.final = nn.Linear(557056, num_classes) # after features block we have a tensor of 1, 557056
+        self.final = nn.Linear(65536, num_classes) # after features block we have a tensor of 1, 65536
 
 
     def forward(self, x):
@@ -65,7 +65,7 @@ class AudioWonderNet(nn.Module):
 
 net = AudioWonderNet(4)
 
-dataset = HDF5PatchesDataset('data/train_pesq.hdf5')
+dataset = HDF5PatchesDataset('data/train_pesq_large.hdf5')
 
 if training:
     testies = Testies(net, dataset)
