@@ -27,8 +27,6 @@ starting_epoch = 0
 num_epochs = 50
 num_classes = 50 # this gives us a category for every step of 0.1 in the PESQ score (0-5)
 training = 1 # Boolean setting for training mode
-input_size = 8192
-
 
 class AudioWonderNet(nn.Module):
     def __init__(self, blocks):
