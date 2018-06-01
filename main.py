@@ -14,7 +14,7 @@ import datetime
 
 from torch.utils.data import DataLoader
 
-from testies import Testies
+from net_evaluator import NetEvaluator
 
 
 import numpy as np
@@ -66,9 +66,5 @@ net = AudioWonderNet(4) # Instantiates the network with 4 layers
 dataset = HDF5PatchesDataset('/home/mining-test/dataset/train_pesq_large.hdf5')
 
 if training:
-    testies = Testies(net, dataset)
-    testies.eval()
-
-
-
-
+    evaluator = NetEvaluator(net, dataset)
+    evaluator.eval()
