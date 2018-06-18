@@ -24,12 +24,10 @@ def run_pesq(reference_file, degraded_file):
 
 
 def get_pesq(reference_file, degraded_file):
-
     output = run_pesq(reference_file, degraded_file)
-
     matches = regex.findall(output)
     assert len(matches) == 1, "No score: " + output
+
     score = float(matches[0])
     assert score > 0.0 and score < 5.0, "Score not valid: " + str(score)
-
     return score
