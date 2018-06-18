@@ -9,31 +9,31 @@ from torch.autograd import Variable
 
 from tensorboardX import SummaryWriter
 
-import librosa
+import librosa, time, os, datetime, glob
 
-import time, os, datetime, glob
+class NetEvaluator(object):
+    """Trains and Tests a Neural Net
 
-class Testies(object):
-    """
-        Args:
-            net (:class:`torch.nn.Module`) network to use
-            dataset (:class: `np.array`)
-            test_percent (float)
-            learning_rate (float)
-            starting_epoch (int)
-            num_epochs (int)
-            checkpoint_every_epochs (int)
-            test_threshold (float)
-            checkpoint_label (string)
-            mfcc (bool),
-            n_mels (int)
-            n_fft (int)
-            hop_length (int)
-            window (string)
-            fmin (int)
-            fmax (int)
-            optimizer
-            loss_function
+    Attributes:
+        net (:class:`torch.nn.Module`): Network to use
+        dataset (:class: `np.array`): The dataset to train/test on
+        test_percent (float, optional): How much of the given dataset to use as testing
+        learning_rate (float, optional)
+        starting_epoch (int, optional)
+        num_epochs (int, optional)
+        checkpoint_every_epochs (int, optional): Creates a checkpoint every X epochs. Set to higher than `num_epochs` for no checkpoints.
+        test_threshold (float, optional)
+        checkpoint_label (string, optional)
+        mfcc (bool, optional): Evaluate dataset as mfcc
+        n_mels (int, optional)
+        n_fft (int, optional)
+        hop_length (int, optional)
+        window (string, optional)
+        fmin (int, optional)
+        fmax (int, optional)
+        batch_size (int, optional)
+        optimizer (:obj:`torch.optim`, optional)
+        loss_function (:obj: `torch.nn._Loss`, optional)
     """
     def __init__(self,
         net,
@@ -52,6 +52,7 @@ class Testies(object):
         window = 'hann',
         fmin = 125,
         fmax = 7600,
+        batch_size = 256,
         optimizer=None,
         loss_function=None
     ):
@@ -103,7 +104,7 @@ class Testies(object):
 
 
     def generate_dataloaders(self):
-
+        """Generate the train and test dataloaders."""
         rand_idxs = torch.randperm(len(self.dataset))
         test_size = int(np.floor(len(self.dataset) * self.test_percent))
 
@@ -125,7 +126,8 @@ class Testies(object):
         )
 
     def load_checkpoint(self):
-        # Try and load the checkpoint
+        """Attempt to load the latest saved learning checkpoint."""
+        # Create a checkpoint directory if none exists
         if not os.path.exists(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir)
             print("\nCreated a 'checkpoints' folder to save/load the model")
@@ -153,7 +155,7 @@ class Testies(object):
 
 
     def init_writer(self):
-        # TensorboardX init
+        """Init the TensorboardX `SummaryWriter`."""
         tensor_label = 'tb_{}_{}'.format(self.checkpoint_label, datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
 
         if not os.path.exists("logs/"+ tensor_label):
@@ -162,17 +164,22 @@ class Testies(object):
         self.writer = SummaryWriter('./logs/' + tensor_label)
 
     def prepareMfcc(self, x):
-        s = np.abs(librosa.core.stft(y=x, n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True)) # pre-computed power spec
-        spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length) # passed to melfilters == hop_length used to be 200
-        x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0) #logamplitude)
+        """Prepare a section of the dataset to be evaluated as mfcc."""
+        # pre-computed power spec
+        s = np.abs(librosa.core.stft(y=x, n_fft=self.n_fft, hop_length=self.hop_length, window=self.window, center=True))
+        # passed to melfilters
+        spectro = librosa.feature.melspectrogram(S=s, n_mels=self.n_mels, fmax=self.fmax, fmin=self.fmin, power=2, n_fft=self.n_fft, hop_length=self.hop_length)
+        #logamplitude
+        x_hold = librosa.core.amplitude_to_db(S=spectro, ref=1.0, amin=5e-4, top_db=80.0)
         return x_hold
 
 
     def train(self):
+        """Train the Network on the dataset."""
         # turn on training mode
         self.net.train()
 
-        for i, (x, y) in enumerate(self.train_dl):
+        for x, y in self.train_dl:
 
             if self.mfcc:
                 x_raw = x.clone()
@@ -181,27 +188,30 @@ class Testies(object):
                     x_mfcc = self.prepareMfcc(x_raw[mfcc_i, 0, :].numpy())
                     x[mfcc_i, 0, :, :] = torch.from_numpy(x_mfcc)
 
+            # Set the vars to use cuda if available
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
                 y_var = y.cuda(non_blocking=True).type(torch.cuda.LongTensor)
-                # if self.mfcc:
-                #     y_var = y_var.unsqueeze(1)[0]
+
+            # Regular Tensors if not
             else:
                 x_var = Variable(x).type(torch.FloatTensor)
                 y_var = Variable(y).type(torch.LongTensor)
-                # if self.mfcc:
-                #     y_var = y_var.unsqueeze(1)[0]
+
 
             # Forward pass
             out = self.net(x_var)
+
             # Compute loss
-            # print(y_var.data)
             loss = self.loss_function(out, y_var)
             self.loss_log.append(loss.item())
+
             # Zero gradients before the backward pass
             self.optimizer.zero_grad()
+
             # Backprop
             loss.backward()
+
             # Update the params
             self.optimizer.step()
 
@@ -209,16 +219,16 @@ class Testies(object):
                 self.writer.add_scalar('train/loss', loss.item(), self.plot)
                 self.plot += 1
 
-            # print(loss.item())
         return loss.item()
 
     def test(self):
+        """Run tests and predictions on the test dataloader."""
         self.net.eval() # eval mode
 
         correct = 0
         total = 0
 
-        for i, (x, y) in enumerate(self.train_dl):
+        for x, y in self.train_dl:
 
             if self.mfcc:
                 x_raw = x.clone()
@@ -227,29 +237,28 @@ class Testies(object):
                     x_mfcc = self.prepareMfcc(x_raw[mfcc_i, 0, :].numpy())
                     x[mfcc_i, 0, :, :] = torch.from_numpy(x_mfcc)
 
+            # Set x to use cuda if available
             if self.num_gpus > 0:
                 x_var = x.cuda(non_blocking=True)
             else:
                 x_var = Variable(x.type(torch.FloatTensor))
 
-            # if self.num_gpus > 0:
-            #     x_var = Variable(x).cuda(non_blocking=True)
-            # else:
-            #     x_var = Variable(x.type(self.dtype))
-
+            # y has to be a non-cuda LongTensor
             y = y.type(torch.LongTensor)
 
+            # Run x_var through the network and extract the predictions
             outputs = self.net(x_var)
             _, predicted = torch.max(outputs.data, 1)
 
             total += y.size(0)
-            # correct += (predicted.cpu() == y).sum()
+            # Because it's a 0-5 floating scale, allow a small leeway for being correct enough
             correct += (abs(predicted.cpu() - y) <= self.test_threshold).sum()
 
         accuracy = 100 * correct / total
         return accuracy
 
     def eval(self):
+        """Run both train and test on the dataset `self.num_epochs` times."""
         best_epoch = 0
         best_accuracy = 0
         best_loss = 0
@@ -273,12 +282,10 @@ class Testies(object):
                 if accuracy > best_accuracy:
                     best_accuracy = accuracy
                     best_epoch = epoch
+                    # Save the net state when we get a new best
                     torch.save(self.net.state_dict(), 'best_model.pkl')
 
-                # time_taken = int(time.time() - checkpoint_time)
-                # checkpoint_time = time.time()
-                # print('Epoch took {} seconds.'.format(time_taken))
-
+                # Save a checkpoint every `self.checkpoint_every_epochs` epochs
                 if (epoch % self.checkpoint_every_epochs == 0 or epoch == (self.num_epochs-1)) and (epoch != self.starting_epoch):
                     save_file = '{:s}checkpoint_{:s}_epoch_{:06d}.pt'.format(self.checkpoint_dir, self.checkpoint_label, epoch)
                     save_state = {
