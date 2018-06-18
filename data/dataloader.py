@@ -36,27 +36,35 @@ if __name__ == '__main__':
     import sounddevice as sd
     import matplotlib.pyplot as plt
 
-    dataset = HDF5PatchesDataset('train_pesq_large_2.hdf5')
+    dataset = HDF5PatchesDataset('train_pesq_large.hdf5')
 
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
 
+    scores = []
     for i, (x, y) in enumerate(dataloader):
         # print('\nBatch', i, 'Sizes:', x.size(), y.size())
         # print('min:', x.min(), 'max:', x.max(), 'mean:', x.mean())
         # print('min:', y.min(), 'max:', y.max(), 'mean:', y.mean())
 
-        print()
-        print(y.item())
-        sd.play(x[0, 0, :4095].numpy(), 16000)
-        sd.wait()
+        # print()
+        # print(y.item())
+        # sd.play(x[0, 0, :4095].numpy(), 16000)
+        # sd.wait()
 
-        time.sleep(0.5)
+        # time.sleep(0.5)
 
-        sd.play(x[0, 0, 4096:8191].numpy(), 16000)
-        sd.wait()
+        # sd.play(x[0, 0, 4096:8191].numpy(), 16000)
+        # sd.wait()
 
-        time.sleep(2)
+        # time.sleep(2)
+
+        score = y.item()
+        scores.append(score)
 
         # plt.plot(x[0, 0, :].numpy())
-        # plt.title(str(y))
+        # plt.title("Score: {:.2f}".format(score / 10.0))
         # plt.show()
+
+    scores = np.array(scores)
+    plt.hist(scores, 50)
+    plt.show()
