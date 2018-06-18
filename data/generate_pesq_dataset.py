@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
 
-input_hdf5 = '/home/mining-test/dataset/train_vctk_patches.hdf5'
-output_hdf5 = '/home/mining-test/dataset/train_pesq_large_2.hdf5'
+input_hdf5 = '/home/ubuntu/super-res/data/train_vctk_patches.hdf5'
+output_hdf5 = '/home/ubuntu/super-res/data/train_pesq_large_2.hdf5'
 
 num_processes = 8
 num_patches = 100
@@ -118,24 +118,11 @@ def generate(data):
                 pass
             finally:
                 if i > 0:
-                    pass
                     os.remove(degraded_x[i][0])
 
         os.remove(degraded_x[0][0])
 
         return patches, scores
-
-    # if len(patches) >= write_every_patches:
-    #     patches = np.expand_dims(np.array(patches, dtype=np.float32), axis=1)
-    #     scores = np.array(scores, dtype=np.int32)
-    #     assert patches.shape[0] == scores.shape[0], "patches and score size don't match!"
-    #     x_dataset.resize(x_dataset.shape[0] - 1 + patches.shape[0], axis=0)
-    #     y_dataset.resize(y_dataset.shape[0] - 1 + scores.shape[0], axis=0)
-    #     print(x_dataset.shape, y_dataset.shape)
-    #     x_dataset[x_dataset.shape[0] - write_every_patches : x_dataset.shape[0], :, :] = patches
-    #     y_dataset[y_dataset.shape[0] - write_every_patches : y_dataset.shape[0]] = scores
-    #     patches = []
-    #     scores = []
 
 n = num_patches
 ni = 0
